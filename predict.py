@@ -1,12 +1,37 @@
+"""
+This script performs predictions using a trained neural network model and give evaluation measures.
+
+The script includes functions for making predictions and calculating binary cross-entropy loss.
+
+Dependencies:
+    - numpy
+    - sklearn
+    - pandas
+    - sys
+    - training.py
+    - data_manipulation.py
+"""
+
 import numpy as np
 from sklearn.metrics import accuracy_score
-import sys
 import pandas as pd
+import sys
 from training import forward_propagation
 from data_manipulation import prepare_data_training
 
 
 def predict(X, parameters):
+    """
+    Perform prediction using the provided input data and model parameters.
+
+    @param X: The input data.
+    @type  X: np.ndarray
+    @param parameters: The model parameters.
+    @type  parameters: dict
+
+    @return: The predicted probabilities and the predicted classes.
+    @rtype:  tuple(np.ndarray, np.ndarray)
+    """
     activations = forward_propagation(X, parameters)
     c_len = len(parameters) // 2
     probabilities = activations['A' + str(c_len)]  # Softmax or Sigmoid outputs
@@ -14,6 +39,19 @@ def predict(X, parameters):
 
 
 def binary_cross_entropy(y_true, y_pred_probs, epsilon=1e-12):
+    """
+    Compute the binary cross-entropy loss.
+
+    @param y_true: The true labels.
+    @type  y_true: np.ndarray
+    @param y_pred_probs: The predicted probabilities.
+    @type  y_pred_probs: np.ndarray
+    @param epsilon: A small value to avoid log(0) issues.
+    @type  epsilon: float
+
+    @return: The binary cross-entropy loss.
+    @rtype:  float
+    """
     y_pred_probs = y_pred_probs[1, :]  # Take only P(M) if M=1, B=0
     y_pred_probs = np.clip(y_pred_probs, epsilon, 1 - epsilon)  # Avoid log(0) issues
     m = y_true.shape[1]
