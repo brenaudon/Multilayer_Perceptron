@@ -1,0 +1,60 @@
+# .github/workflows/development.yml
+name: Development pipeline
+
+on:
+  push:
+
+jobs:
+  create-virtualenv:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v2
+      - uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+
+      - uses: syphar/restore-pip-download-cache@v1
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+      - run: pip install -r requirements.txt
+        if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+  build_docs:
+    runs-on: ubuntu-22.04
+    needs: create-virtualenv
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v2
+      - uses: syphar/restore-virtualenv@v1
+        id: cache-virtualenv
+
+      - name: Build documentation
+        id: docs_build
+        run: sh ./scripts/pydoctor.sh
+
+      - name: Upload documentation as artifact
+        id: docs_artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apidocs/
+
+  deploy_docs:
+    runs-on: ubuntu-22.04
+    needs: build_docs
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
