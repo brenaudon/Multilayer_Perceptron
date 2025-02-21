@@ -13,7 +13,7 @@ def categorical_cross_entropy(y_true, y_pred):
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
 
-def initialisation(dimensions):
+def initialisation(dimensions, initialization='random'):
 
     parameters = {}
     c_len = len(dimensions)
@@ -47,6 +47,7 @@ def forward_propagation(X, parameters, af=ActivationFunction('sigmoid')):
 
     for c in range(1, c_len + 1):
         Z = parameters['W' + str(c)].dot(activations['A' + str(c - 1)]) + parameters['b' + str(c)]
+        activations['Z' + str(c)] = Z  # Store pre-activation Z
         if c == c_len:
             activations['A' + str(c)] = softmax(Z)
         else:
@@ -64,8 +65,10 @@ def back_propagation(y, parameters, activations, af=ActivationFunction('sigmoid'
     for c in reversed(range(1, c_len + 1)):
         gradients['dW' + str(c)] = 1/m * np.dot(dZ, activations['A' + str(c - 1)].T)
         gradients['db' + str(c)] = 1/m * np.sum(dZ, axis=1, keepdims=True)
+
         if c > 1:
-            dZ = np.dot(parameters['W' + str(c)].T, dZ) * af.derivative(activations['A' + str(c - 1)])
+            dA_prev = np.dot(parameters['W' + str(c)].T, dZ)
+            dZ = dA_prev * af.derivative(activations['Z' + str(c - 1)])
 
     return gradients
 
@@ -85,26 +88,28 @@ def predict(X, parameters):
     Af = activations['A' + str(c_len)]
     return np.argmax(Af, axis=0)  # Returns 0 for 'B' and 1 for 'M'
 
-def deep_neural_network(X_train, y_train, X_validate, y_validate, hidden_layers = (36, 36, 36), learning_rate = 0.002, n_iter = 15000):
+def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
     # initialise parameters
-    dimensions = list(hidden_layers)
+    dimensions = list(config.get('hidden_layers'))
     dimensions.insert(0, X_train.shape[0])
     dimensions.append(y_train.shape[0])
-    parameters = initialisation(dimensions)
+    parameters = initialisation(dimensions, config.get('initialization'))
 
     # numpy table to store training history
-    training_history = np.zeros((int(n_iter), 2))
-    validate_history = np.zeros((int(n_iter), 2))
+    training_history = np.zeros((int(config.get('n_iter')), 2))
+    validate_history = np.zeros((int(config.get('n_iter')), 2))
+
+    af = ActivationFunction(config.get('activation'))
 
     c_len = len(parameters) // 2
 
     # gradient descent
-    for i in tqdm(range(n_iter)):
+    for i in tqdm(range(config.get('n_iter'))):
 
-        activations = forward_propagation(X_train, parameters)
-        gradients = back_propagation(y_train, parameters, activations)
-        parameters = update(gradients, parameters, learning_rate)
+        activations = forward_propagation(X_train, parameters, af)
+        gradients = back_propagation(y_train, parameters, activations, af)
+        parameters = update(gradients, parameters, config.get('learning_rate'))
         Af = activations['A' + str(c_len)]
 
         # log_loss and accuracy calcul
@@ -166,8 +171,19 @@ if __name__ == "__main__":
     X_validate = df_validate.drop(columns=['ID', 'Diagnosis']).T
     y_validate = np.array(df_validate['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
 
+    config = {
+        'activation': 'sigmoid',
+        'initialization': 'random',
+        'optimisation': 'gradient_descent',
+        'hidden_layers': (36, 36, 36),
+        'learning_rate': 0.002,
+        # 'batch_size': 32,
+        # 'epochs': 15000,
+        'n_iter': 15000,
+        'loss': 'categorical_cross_entropy'
+    }
 
-    deep_neural_network(X_train, y_train, X_validate, y_validate)
+    deep_neural_network(X_train, y_train, X_validate, y_validate, config)
 
     print("Training done!")
 

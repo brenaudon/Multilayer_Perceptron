@@ -50,6 +50,26 @@ class ActivationFunction:
         @param name: The name of the activation function.
         @type  name: str
         """
+        self.activation_functions = {
+            'sigmoid': self.sigmoid,
+            'tanh': self.tanh,
+            'relu': self.relu,
+            'leaky_relu': self.leaky_relu,
+            'elu': self.elu,
+            'selu': self.selu,
+            'swish': self.swish,
+            'gelu': self.gelu
+        }
+        self.activation_derivatives = {
+            'sigmoid': self.sigmoid_derivative,
+            'tanh': self.tanh_derivative,
+            'relu': self.relu_derivative,
+            'leaky_relu': self.leaky_relu_derivative,
+            'elu': self.elu_derivative,
+            'selu': self.selu_derivative,
+            'swish': self.swish_derivative,
+            'gelu': self.gelu_derivative
+        }
         self.name = name
         self.function = self.activation_functions.get(name, self.unknown_activation)
         self.derivative = self.activation_derivatives.get(name, self.unknown_derivative)
@@ -279,27 +299,3 @@ class ActivationFunction:
         return 0.5 * (1 + np.tanh(c * (Z + 0.044715 * Z**3))) + \
             0.5 * Z * (1 - np.tanh(c * (Z + 0.044715 * Z**3)) ** 2) * \
             (c * (1 + 3 * 0.044715 * Z**2))
-
-    ### ACTIVATION FUNCTION DICTIONARY ###
-    activation_functions = {
-        'sigmoid': sigmoid,
-        'tanh': tanh,
-        'relu': relu,
-        'leaky_relu': leaky_relu,
-        'elu': elu,
-        'selu': selu,
-        'swish': swish,
-        'gelu': gelu
-    }
-
-    ### DERIVATIVE FUNCTION DICTIONARY ###
-    activation_derivatives = {
-        'sigmoid': sigmoid_derivative,
-        'tanh': tanh_derivative,
-        'relu': relu_derivative,
-        'leaky_relu': leaky_relu_derivative,
-        'elu': elu_derivative,
-        'selu': selu_derivative,
-        'swish': swish_derivative,
-        'gelu': gelu_derivative
-    }
