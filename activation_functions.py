@@ -38,6 +38,7 @@ class ActivationFunction:
     @ivar derivative: The derivative of the activation function.
     @type derivative: function
     """
+
     def __init__(self, name):
         """
         Initialize the ActivationFunction class with the given activation function name.
@@ -46,50 +47,14 @@ class ActivationFunction:
         @type  name: str
         """
         self.name = name
-        self.function = self.get_function(name)
-        self.derivative = self.get_derivative(name)
+        self.function = self.activation_functions.get(name, self.unknown_activation)
+        self.derivative = self.activation_derivatives.get(name, self.unknown_derivative)
 
-    def get_function(self, name):
-        """
-        Get the activation function based on the name.
+    def unknown_activation(self, Z):
+        raise ValueError(f"Unknown activation function: {self.name}")
 
-        @param name: The name of the activation function.
-        @type  name: str
-
-        @return: The activation function.
-        @rtype:  function
-        """
-        if name == 'sigmoid':
-            return self.sigmoid
-        elif name == 'tanh':
-            return self.tanh
-        elif name == 'relu':
-            return self.relu
-        elif name == 'leaky_relu':
-            return self.leaky_relu
-        else:
-            raise ValueError(f"Unknown activation function: {name}")
-
-    def get_derivative(self, name):
-        """
-        Get the derivative of the activation function based on the name.
-
-        @param name: The name of the activation function.
-        @type  name: str
-
-        @return: The derivative of the activation function.
-        @rtype:  function
-        """
-        if name == 'sigmoid':
-            return self.sigmoid_derivative
-        elif name == 'tanh':
-            return self.tanh_derivative
-        elif name == 'relu':
-            return self.relu_derivative
-        elif name == 'leaky_relu':
-            return self.leaky_relu_derivative
-        else:
-            raise ValueError(f"Unknown activation function: {name}")
+    def unknown_derivative(self, Z):
+        raise ValueError(f"Unknown activation derivative: {self.name}")
 
     def sigmoid(self, Z):
         """
@@ -107,13 +72,14 @@ class ActivationFunction:
         """
         Compute the derivative of the sigmoid function.
 
-        @param Z: The input Z.
+        @param Z: The pre-activation value Z.
         @type  Z: np.ndarray
 
         @return: The derivative of the sigmoid function.
         @rtype:  np.ndarray
         """
-        return Z * (1 - Z)
+        sigmoid_Z = 1 / (1 + np.exp(-Z))
+        return sigmoid_Z * (1 - sigmoid_Z)
 
     def tanh(self, Z):
         """
@@ -125,23 +91,24 @@ class ActivationFunction:
         @return: The tanh of Z.
         @rtype:  np.ndarray
         """
-        return np.exp(Z) - np.exp(-Z) / np.exp(Z) + np.exp(-Z)
+        return np.tanh(Z)
 
     def tanh_derivative(self, Z):
         """
         Compute the derivative of the tanh function.
 
-        @param Z: The input Z.
+        @param Z: The pre-activation value Z.
         @type  Z: np.ndarray
 
         @return: The derivative of the tanh function.
         @rtype:  np.ndarray
         """
-        return 1 - Z ** 2
+        tanh_Z = np.tanh(Z)
+        return 1 - tanh_Z ** 2  # Correct derivative
 
     def relu(self, Z):
         """
-        Compute the ReLU of the input Z.
+        Compute the ReLU (Rectified Linear Unit) of the input Z.
 
         @param Z: The input Z.
         @type  Z: np.ndarray
@@ -155,7 +122,7 @@ class ActivationFunction:
         """
         Compute the derivative of the ReLU function.
 
-        @param Z: The input Z.
+        @param Z: The pre-activation value Z.
         @type  Z: np.ndarray
 
         @return: The derivative of the ReLU function.
@@ -163,26 +130,166 @@ class ActivationFunction:
         """
         return (Z > 0).astype(float)
 
-    def leaky_relu(self, Z):
+    def leaky_relu(self, Z, alpha=0.01):
         """
         Compute the leaky ReLU of the input Z.
 
         @param Z: The input Z.
         @type  Z: np.ndarray
+        @param alpha: Small slope for negative values
+        @type  alpha: float
 
         @return: The leaky ReLU of Z.
         @rtype:  np.ndarray
         """
-        return np.maximum(0.01 * Z, Z)
+        return np.maximum(alpha * Z, Z)
 
-    def leaky_relu_derivative(self, Z):
+    def leaky_relu_derivative(self, Z, alpha=0.01):
         """
         Compute the derivative of the leaky ReLU function.
 
-        @param Z: The input Z.
+        @param Z: The pre-activation value Z.
         @type  Z: np.ndarray
+        @param alpha: Small slope for negative values
+        @type  alpha: float
 
         @return: The derivative of the leaky ReLU function.
         @rtype:  np.ndarray
         """
-        return np.where(Z > 0, 1, 0.01)
+        return np.where(Z > 0, 1, alpha)
+
+    def elu(self, Z, alpha=1.0):
+        """
+        Compute the ELU (Exponential Linear Unit) of the input Z.
+
+        @param Z: The input Z.
+        @type  Z: np.ndarray
+        @param alpha: Constant factor for negative values
+        @type  alpha: float
+
+        @return: The ELU of Z.
+        @rtype:  np.ndarray
+        """
+        return np.where(Z > 0, Z, alpha * (np.exp(Z) - 1))
+
+    def elu_derivative(self, Z, alpha=1.0):
+        """
+        Compute the derivative of the ELU function.
+
+        @param Z: The pre-activation value Z.
+        @type  Z: np.ndarray
+        @param alpha: Constant factor for negative values
+        @type  alpha: float
+
+        @return: The derivative of the ELU function.
+        @rtype:  np.ndarray
+        """
+        return np.where(Z > 0, 1, self.elu(Z, alpha) + alpha)
+
+    def selu(self, Z, alpha=1.67326, scale=1.0507):
+        """
+        Compute the SELU (Scaled Exponential Linear Unit) of the input Z.
+
+        @param Z: The input Z.
+        @type  Z: np.ndarray
+        @param alpha: Constant factor for negative values
+        @type  alpha: float
+        @param scale: Constant factor for scaling
+        @type  scale: float
+
+        @return: The SELU of Z.
+        @rtype:  np.ndarray
+        """
+        return scale * np.where(Z > 0, Z, alpha * (np.exp(Z) - 1))
+
+    def selu_derivative(self, Z, alpha=1.67326, scale=1.0507):
+        """
+        Compute the derivative of the SELU function.
+
+        @param Z: The pre-activation value Z.
+        @type  Z: np.ndarray
+        @param alpha: Constant factor for negative values
+        @type  alpha: float
+        @param scale: Constant factor for scaling
+        @type  scale: float
+
+        @return: The derivative of the SELU function.
+        @rtype:  np.ndarray
+        """
+        return scale * np.where(Z > 0, 1, self.elu(Z, alpha) + alpha)
+
+    def swish(self, Z):
+        """
+        Compute the Swish (Self-Gated) of the input Z.
+
+        @param Z: The input Z.
+        @type  Z: np.ndarray
+
+        @return: The Swish of Z.
+        @rtype:  np.ndarray
+        """
+        return Z / (1 + np.exp(-Z))
+
+    def swish_derivative(self, Z):
+        """
+        Compute the derivative of the Swish function.
+
+        @param Z: The pre-activation value Z.
+        @type  Z: np.ndarray
+
+        @return: The derivative of the Swish function.
+        @rtype:  np.ndarray
+        """
+        swish_Z = self.swish(Z)
+        return swish_Z + (1 - swish_Z) * self.sigmoid(Z)
+
+    def gelu(self, Z):
+        """
+        Compute the GELU (Gaussian Error Linear Unit) of the input Z.
+
+        @param Z: The input Z.
+        @type  Z: np.ndarray
+
+        @return: The GELU of Z.
+        @rtype:  np.ndarray
+        """
+        return 0.5 * Z * (1 + np.tanh(np.sqrt(2 / np.pi) * (Z + 0.044715 * Z**3)))
+
+    def gelu_derivative(self, Z):
+        """
+        Compute the derivative of the GELU function.
+
+        @param Z: The pre-activation value Z.
+        @type  Z: np.ndarray
+
+        @return: The derivative of the GELU function.
+        @rtype:  np.ndarray
+        """
+        c = np.sqrt(2 / np.pi)
+        return 0.5 * (1 + np.tanh(c * (Z + 0.044715 * Z**3))) + \
+            0.5 * Z * (1 - np.tanh(c * (Z + 0.044715 * Z**3)) ** 2) * \
+            (c * (1 + 3 * 0.044715 * Z**2))
+
+    ### ACTIVATION FUNCTION DICTIONARY ###
+    activation_functions = {
+        'sigmoid': sigmoid,
+        'tanh': tanh,
+        'relu': relu,
+        'leaky_relu': leaky_relu,
+        'elu': elu,
+        'selu': selu,
+        'swish': swish,
+        'gelu': gelu
+    }
+
+    ### DERIVATIVE FUNCTION DICTIONARY ###
+    activation_derivatives = {
+        'sigmoid': sigmoid_derivative,
+        'tanh': tanh_derivative,
+        'relu': relu_derivative,
+        'leaky_relu': leaky_relu_derivative,
+        'elu': elu_derivative,
+        'selu': selu_derivative,
+        'swish': swish_derivative,
+        'gelu': gelu_derivative
+    }
