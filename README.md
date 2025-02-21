@@ -194,11 +194,9 @@ f(Z) = 0.5 Z \left(1 + \tanh \left( \sqrt{\frac{2}{\pi}} \left( Z + 0.044715 Z^3
 ### **Derivative**
 The derivative is more complex, but it helps with **smooth gradient updates**:
 
-\[
 f'(Z) = 0.5 \left(1 + \tanh \left( \sqrt{\frac{2}{\pi}} \left( Z + 0.044715 Z^3 \right) \right) \right) +
 0.5 Z \left(1 - \tanh^2 \left( \sqrt{\frac{2}{\pi}} \left( Z + 0.044715 Z^3 \right) \right) \right)
 \left( \sqrt{\frac{2}{\pi}} \left(1 + 3 \times 0.044715 Z^2 \right) \right)
-\]
 
 ### **Pros**
 ✅ Used in **state-of-the-art deep learning models**.  
@@ -220,5 +218,7 @@ f'(Z) = 0.5 \left(1 + \tanh \left( \sqrt{\frac{2}{\pi}} \left( Z + 0.044715 Z^3 
 | **ReLU** | Most deep learning tasks | Fast, simple, avoids vanishing gradients | Can have dead neurons (dying ReLU problem) |
 | **Leaky ReLU** | Tasks where ReLU fails | Prevents dying neurons | Slightly more expensive |
 | **ELU** | Faster training, better convergence | No dead neurons, good for deep networks | Requires tuning α, slower than ReLU |
+| **SELU** | Deep, fully connected networks | Self-normalizing, reduces need for BatchNorm, good for deep networks | Requires careful weight initialization and Alpha Dropout |
 | **Swish** | Deep networks (Google-developed) | Can outperform ReLU | More complex to compute |
 | **GELU** | Transformer models (BERT, GPT) | Used in state-of-the-art networks | Computationally expensive |
+
