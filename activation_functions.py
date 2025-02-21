@@ -37,6 +37,10 @@ class ActivationFunction:
     @type function: function
     @ivar derivative: The derivative of the activation function.
     @type derivative: function
+    @ivar activation_functions: Dictionary of available activation functions.
+    @type activation_functions: dictionary
+    @ivar activation_derivatives: Dictionary of available derivative of an activation functions.
+    @type activation_derivatives: dictionary
     """
 
     def __init__(self, name):
@@ -50,10 +54,16 @@ class ActivationFunction:
         self.function = self.activation_functions.get(name, self.unknown_activation)
         self.derivative = self.activation_derivatives.get(name, self.unknown_derivative)
 
-    def unknown_activation(self, Z):
+    def unknown_activation(self):
+        """
+        Raise an error for an unknown activation function.
+        """
         raise ValueError(f"Unknown activation function: {self.name}")
 
-    def unknown_derivative(self, Z):
+    def unknown_derivative(self):
+        """
+        Raise an error for an unknown derivative function.
+        """
         raise ValueError(f"Unknown activation derivative: {self.name}")
 
     def sigmoid(self, Z):
