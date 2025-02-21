@@ -47,7 +47,7 @@ def get_most_correlated_features_to_remove(df: pd.DataFrame) -> list:
             to_remove.append(couple[1])
 
     #save to_remove in a config file
-    with open('config.txt', 'w') as f:
+    with open('to_remove.txt', 'w') as f:
         for item in to_remove:
             f.write("%s\n" % item)
 

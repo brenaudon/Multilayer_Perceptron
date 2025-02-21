@@ -70,7 +70,7 @@ if __name__ == "__main__":
     df = pd.read_csv(csv_file_path, header=None)
 
     # Open list of features to remove
-    with open('config.txt', 'r') as f:
+    with open('to_remove.txt', 'r') as f:
         to_remove = f.read().splitlines()
 
     df, _ = prepare_data_training(df, to_remove)
