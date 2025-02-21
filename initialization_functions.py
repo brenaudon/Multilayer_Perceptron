@@ -1,0 +1,108 @@
+"""
+This file provides various initialization functions for use in neural networks.
+
+The script includes custom implementations for several initialization functions.
+
+Dependencies:
+    - numpy
+"""
+
+import numpy as np
+
+class InitializationFunction:
+    """
+    A class to represent and dynamically call various initialization functions.
+
+    @ivar name: The name of the initialization function.
+    @type name: str
+    @ivar function: The initialization function.
+    @type function: function
+    @ivar initialization_functions: Dictionary of available initialization functions.
+    @type initialization_functions: dictionary
+    """
+
+    def __init__(self, name):
+        """
+        Initialize the InitializationFunction class with the given initialization function name.
+
+        @param name: The name of the initialization function.
+        @type  name: str
+        """
+        self.initialization_functions = {
+            'random': self.random,
+            'he_normal': self.he_normal,
+            'he_uniform': self.he_uniform,
+            'xavier_glorot_normal': self.xavier_glorot_normal,
+            'xavier_glorot_uniform': self.xavier_glorot_uniform,
+        }
+
+        # Randon seed for reproducibility
+        np.random.seed(10)
+
+        self.name = name
+        self.function = self.initialization_functions.get(name, self.unknown_initialization)
+
+    def unknown_initialization(self):
+        """
+        Raise an error for an unknown initialization function.
+        """
+        raise ValueError(f"Unknown initialization function: {self.name}")
+
+    def random(self, dimensions):
+        """
+        Random initialization function.
+
+        @param dimensions: The dimensions of the weight matrix.
+        @type  dimensions: tuple
+        @return: The randomly initialized weight matrix.
+        @rtype: numpy.ndarray
+        """
+        return np.random.randn(dimensions[0], dimensions[1])
+
+    # TODO - Need to be checked
+    def he_normal(self, dimensions):
+        """
+        He Normal initialization function.
+
+        @param dimensions: The dimensions of the weight matrix.
+        @type  dimensions: tuple
+        @return: The He Normal initialized weight matrix.
+        @rtype: numpy.ndarray
+        """
+        return np.random.randn(dimensions[0], dimensions[1]) * np.sqrt(2. / dimensions[1])
+
+    def he_uniform(self, dimensions):
+        """
+        He Uniform initialization function.
+
+        @param dimensions: The dimensions of the weight matrix.
+        @type  dimensions: tuple
+        @return: The He Uniform initialized weight matrix.
+        @rtype: numpy.ndarray
+        """
+        limit = np.sqrt(6 / dimensions[1])
+        return np.random.uniform(-limit, limit, dimensions)
+
+    # TODO - Need to be checked
+    def xavier_glorot_normal(self, dimensions):
+        """
+        Xavier Glorot Normal initialization function.
+
+        @param dimensions: The dimensions of the weight matrix.
+        @type  dimensions: tuple
+        @return: The Xavier Glorot Normal initialized weight matrix.
+        @rtype: numpy.ndarray
+        """
+        return np.random.randn(dimensions[0], dimensions[1]) * np.sqrt(2. / (dimensions[0] + dimensions[1]))
+
+    def xavier_glorot_uniform(self, dimensions):
+        """
+        Xavier Glorot Uniform initialization function.
+
+        @param dimensions: The dimensions of the weight matrix.
+        @type  dimensions: tuple
+        @return: The Xavier Glorot Uniform initialized weight matrix.
+        @rtype: numpy.ndarray
+        """
+        limit = np.sqrt(6 / (dimensions[0] + dimensions[1]))
+        return np.random.uniform(-limit, limit, dimensions)

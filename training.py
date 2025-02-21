@@ -7,35 +7,22 @@ from data_manipulation import prepare_data_training
 from cut_dataset import split_csv
 import argparse
 from activation_functions import ActivationFunction, softmax
+from initialization_functions import InitializationFunction
 
 def categorical_cross_entropy(y_true, y_pred):
     m = y_true.shape[1]
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
 
-def initialisation(dimensions, initialization='random'):
+def initialisation(dimensions, init_funct=InitializationFunction('random')):
 
     parameters = {}
     c_len = len(dimensions)
 
-    # Randon seed for reproducibility
-    np.random.seed(10)
-
     # Random Initialization
     for c in range(1, c_len):
-        parameters['W' + str(c)] = np.random.randn(dimensions[c], dimensions[c - 1])
-        parameters['b' + str(c)] = np.random.randn(dimensions[c], 1)
-
-    # He Normal Initialization
-    # for c in range(1, c_len):
-    #     parameters['W' + str(c)] = np.random.randn(dimensions[c], dimensions[c - 1]) * np.sqrt(2. / dimensions[c - 1])
-    #     parameters['b' + str(c)] = np.zeros((dimensions[c], 1))  # Zero bias initialization
-
-    # He Uniform Initialization
-    # for c in range(1, c_len):
-    #     limit = np.sqrt(6 / dimensions[c - 1])  # He Uniform formula
-    #     parameters['W' + str(c)] = np.random.uniform(-limit, limit, (dimensions[c], dimensions[c - 1]))
-    #     parameters['b' + str(c)] = np.zeros((dimensions[c], 1))  # Biases are usually initialized to 0
+        parameters['W' + str(c)] = init_funct.function((dimensions[c], dimensions[c - 1]))
+        parameters['b' + str(c)] = np.zeros((dimensions[c], 1))  # Zero bias initialization
 
     return parameters
 
@@ -94,7 +81,9 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     dimensions = list(config.get('hidden_layers'))
     dimensions.insert(0, X_train.shape[0])
     dimensions.append(y_train.shape[0])
-    parameters = initialisation(dimensions, config.get('initialization'))
+
+    init_funct = InitializationFunction(config.get('initialization'))
+    parameters = initialisation(dimensions, init_funct)
 
     # numpy table to store training history
     training_history = np.zeros((int(config.get('n_iter')), 2))
@@ -176,7 +165,7 @@ if __name__ == "__main__":
         'initialization': 'random',
         'optimisation': 'gradient_descent',
         'hidden_layers': (36, 36, 36),
-        'learning_rate': 0.002,
+        'learning_rate': 0.001,
         # 'batch_size': 32,
         # 'epochs': 15000,
         'n_iter': 15000,
