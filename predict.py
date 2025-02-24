@@ -20,7 +20,7 @@ from data_manipulation import prepare_data_training
 from metrics_functions import MetricFunctions
 
 
-def predict(X, parameters):
+def predict(X, parameters, config):
     """
     Perform prediction using the provided input data and model parameters.
 
@@ -32,7 +32,7 @@ def predict(X, parameters):
     @return: The predicted probabilities and the predicted classes.
     @rtype:  tuple(np.ndarray, np.ndarray)
     """
-    activations = forward_propagation(X, parameters)
+    activations = forward_propagation(X, parameters, config)
     c_len = len(parameters) // 2
     probabilities = activations['A' + str(c_len)]  # Softmax or Sigmoid outputs
     return probabilities, np.argmax(probabilities, axis=0)  # Return the class with the highest probability
@@ -87,7 +87,32 @@ if __name__ == "__main__":
     #Open the parameters file
     parameters = np.load('parameters.npy', allow_pickle=True).item()
 
-    y_pred_probs, y_pred = predict(X, parameters)
+    config = {
+        'layer1' : {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'layer2': {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'layer3': {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'optimisation': 'gradient_descent',
+        'learning_rate': 0.001,
+        'hidden_layers': (36, 36, 36),
+        # 'batch_size': 32,
+        # 'epochs': 15000,
+        'n_iter': 15000,
+        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc']
+    }
+
+    y_pred_probs, y_pred = predict(X, parameters, config)
     y_true = np.argmax(y, axis=0).T.reshape(1, -1)
 
     metrics = MetricFunctions(['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'])

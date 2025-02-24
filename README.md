@@ -396,6 +396,7 @@ and biases should be **zero**.
 ## **Best Initialization for Each Activation**
 | Activation     | Best Initialization                                                      |
 |----------------|--------------------------------------------------------------------------|
+| **Softmax**    | Xavier Glorot Normal, Xavier Glorot Uniform                              |
 | **Sigmoid**    | Xavier Glorot Normal, Xavier Glorot Uniform                              |
 | **Tanh**       | Xavier Glorot Normal, Xavier Glorot Uniform, Lecun Normal, Lecun Uniform |
 | **ReLU**       | He Normal, He Uniform                                                    |
