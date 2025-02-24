@@ -164,12 +164,12 @@ if __name__ == "__main__":
         'activation': 'sigmoid',
         'initialization': 'random',
         'optimisation': 'gradient_descent',
+        'loss': 'categorical_cross_entropy',
         'hidden_layers': (36, 36, 36),
         'learning_rate': 0.001,
         # 'batch_size': 32,
         # 'epochs': 15000,
-        'n_iter': 15000,
-        'loss': 'categorical_cross_entropy'
+        'n_iter': 15000
     }
 
     deep_neural_network(X_train, y_train, X_validate, y_validate, config)
