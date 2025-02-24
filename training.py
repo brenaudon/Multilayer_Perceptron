@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score, log_loss
 from tqdm import tqdm
 import sys
 from data_manipulation import prepare_data_training
 from cut_dataset import split_csv
-import argparse
 from activation_functions import ActivationFunction, softmax
 from initialization_functions import InitializationFunction
 from metrics_functions import MetricFunctions
@@ -15,9 +13,7 @@ def categorical_cross_entropy(y_true, y_pred):
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
 
-
 def initialisation(dimensions, init_funct=InitializationFunction('random')):
-
     parameters = {}
     c_len = len(dimensions)
 
@@ -88,14 +84,14 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     parameters = initialisation(dimensions, init_funct)
 
     # numpy table to store training history
-    training_history = np.zeros((int(config.get('n_iter')), 2))
-    validate_history = np.zeros((int(config.get('n_iter')), 2))
+    training_history = np.zeros((int(config.get('n_iter')), len(config.get('metrics')) + 1))
+    validate_history = np.zeros((int(config.get('n_iter')), len(config.get('metrics')) + 1))
 
     af = ActivationFunction(config.get('activation'))
 
     c_len = len(parameters) // 2
 
-    metrics = MetricFunctions(['accuracy'])
+    metrics = MetricFunctions(config.get('metrics'))
 
     # gradient descent
     for i in tqdm(range(config.get('n_iter'))):
@@ -109,41 +105,40 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         training_history[i, 0] = (categorical_cross_entropy(y_train, Af))
         y_train_pred = predict(X_train, parameters)
         y_train_true = np.argmax(y_train, axis=0)
-        training_history[i, 1] = (metrics.functions['accuracy'](y_train_true.flatten(), y_train_pred.flatten()))
+        for j, metric in enumerate(config.get('metrics')):
+            training_history[i, 1 + j] = (metrics.functions[metric](y_train_true.flatten(), y_train_pred.flatten()))
 
         activations_validate = forward_propagation(X_validate, parameters)
         Af_validate = activations_validate['A' + str(c_len)]
         validate_history[i, 0] = (categorical_cross_entropy(y_validate, Af_validate))
         y_validate_pred = predict(X_validate, parameters)
         y_validate_true = np.argmax(y_validate, axis=0)
-        validate_history[i, 1] = (metrics.functions['accuracy'](y_validate_true.flatten(), y_validate_pred.flatten()))
+        for j, metric in enumerate(config.get('metrics')):
+            validate_history[i, 1 + j] = (metrics.functions[metric](y_validate_true.flatten(), y_validate_pred.flatten()))
 
 
     #save the parameters
     np.save('parameters.npy', parameters)
 
     # Plot learning curve
-    plt.figure(figsize=(12, 4))
-    plt.subplot(1, 2, 1)
+    metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
+    num_metrics = len(metrics)
+    nb_cols = min(4, num_metrics + 1)  # Max 4 columns per row
+    nb_rows = (num_metrics + 1 + nb_cols - 1) // nb_cols  # Compute the number of rows needed
+
+    plt.figure(figsize=(nb_cols * 4, nb_rows * 3))
+    plt.subplot(nb_rows, 4, 1)
     plt.plot(training_history[:, 0], label='training loss')
     plt.plot(validate_history[:, 0], 'orange', linestyle='--', label='validation loss')
     plt.legend()
-    plt.subplot(1, 2, 2)
-    plt.plot(training_history[:, 1], label='training acc')
-    plt.plot(validate_history[:, 1], 'orange', linestyle='--', label='validation acc')
-    plt.legend()
+    for j, metric in enumerate(config.get('metrics')):
+        plt.subplot(nb_rows, 4, 2 + j)
+        plt.plot(training_history[:, 1 + j], label=f'training {metric}')
+        plt.plot(validate_history[:, 1 + j], 'orange', linestyle='--', label=f'validation {metric}')
+        plt.legend()
     plt.show()
 
     return training_history
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='Train a neural network.')
-    parser.add_argument('--layers', type=int, nargs='+', required=True, help='Number of neurons in each hidden layer')
-    parser.add_argument('--epochs', type=int, required=True, help='Number of epochs')
-    parser.add_argument('--loss', type=str, required=True, help='Loss function')
-    parser.add_argument('--batch_size', type=int, required=True, help='Batch size')
-    parser.add_argument('--learning_rate', type=float, required=True, help='Learning rate')
-    return parser.parse_args()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -173,7 +168,8 @@ if __name__ == "__main__":
         'learning_rate': 0.001,
         # 'batch_size': 32,
         # 'epochs': 15000,
-        'n_iter': 15000
+        'n_iter': 15000,
+        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc']
     }
 
     deep_neural_network(X_train, y_train, X_validate, y_validate, config)
