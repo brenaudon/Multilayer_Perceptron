@@ -13,11 +13,11 @@ Dependencies:
 """
 
 import numpy as np
-from sklearn.metrics import accuracy_score
 import pandas as pd
 import sys
 from training import forward_propagation
 from data_manipulation import prepare_data_training
+from metrics_functions import MetricFunctions
 
 
 def predict(X, parameters):
@@ -90,5 +90,9 @@ if __name__ == "__main__":
     y_pred_probs, y_pred = predict(X, parameters)
     y_true = np.argmax(y, axis=0).T.reshape(1, -1)
 
-    print(f"Accuracy: {accuracy_score(y_true.flatten(), y_pred.flatten())}")
+    metrics = MetricFunctions(['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'])
+
+    for key in metrics.functions:
+        print(f'{key}: {metrics.functions[key](y_true.flatten(), y_pred.flatten())}')
+
     print(f"Binary Cross-Entropy Loss: {binary_cross_entropy(y_true, y_pred_probs)}")

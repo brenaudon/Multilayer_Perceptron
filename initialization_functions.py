@@ -37,7 +37,6 @@ class InitializationFunction:
             'lecun_normal': self.lecun_normal,
             'lecun_uniform': self.lecun_uniform,
             'selu': self.selu,
-            'variance_scaling': self.variance_scaling,
         }
 
         np.random.seed(10)  # Reproducibility
@@ -56,7 +55,9 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: Randomly initialized matrix from a normal distribution.
+        @rtype: numpy.ndarray
         """
         return np.random.randn(*dimensions)
 
@@ -70,7 +71,9 @@ class InitializationFunction:
         @type  minval: float
         @param maxval: Maximum value of the uniform distribution.
         @type  maxval: float
+
         @return: Randomly initialized matrix from a uniform distribution.
+        @rtype: numpy.ndarray
         """
         return np.random.uniform(low=minval, high=maxval, size=dimensions)
 
@@ -80,6 +83,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The He Normal initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -91,6 +95,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The He Uniform initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -103,6 +108,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The Xavier Glorot Normal initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -114,6 +120,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The Xavier Glorot Uniform initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -126,6 +133,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The Lecun Normal initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -137,6 +145,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The Lecun Uniform initialized weight matrix.
         @rtype: numpy.ndarray
         """
@@ -149,6 +158,7 @@ class InitializationFunction:
 
         @param dimensions: Shape of weight matrix (n_out, n_in).
         @type  dimensions: tuple
+
         @return: The SELU initialized weight matrix.
         @rtype: numpy.ndarray
         """

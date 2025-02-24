@@ -8,11 +8,13 @@ from cut_dataset import split_csv
 import argparse
 from activation_functions import ActivationFunction, softmax
 from initialization_functions import InitializationFunction
+from metrics_functions import MetricFunctions
 
 def categorical_cross_entropy(y_true, y_pred):
     m = y_true.shape[1]
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
+
 
 def initialisation(dimensions, init_funct=InitializationFunction('random')):
 
@@ -93,6 +95,8 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
     c_len = len(parameters) // 2
 
+    metrics = MetricFunctions(['accuracy'])
+
     # gradient descent
     for i in tqdm(range(config.get('n_iter'))):
 
@@ -102,17 +106,17 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         Af = activations['A' + str(c_len)]
 
         # log_loss and accuracy calcul
-        training_history[i, 0] = (log_loss(y_train.flatten(), Af.flatten()))
+        training_history[i, 0] = (categorical_cross_entropy(y_train, Af))
         y_train_pred = predict(X_train, parameters)
         y_train_true = np.argmax(y_train, axis=0)
-        training_history[i, 1] = (accuracy_score(y_train_true.flatten(), y_train_pred.flatten()))
+        training_history[i, 1] = (metrics.functions['accuracy'](y_train_true.flatten(), y_train_pred.flatten()))
 
         activations_validate = forward_propagation(X_validate, parameters)
         Af_validate = activations_validate['A' + str(c_len)]
-        validate_history[i, 0] = (log_loss(y_validate.flatten(), Af_validate.flatten()))
+        validate_history[i, 0] = (categorical_cross_entropy(y_validate, Af_validate))
         y_validate_pred = predict(X_validate, parameters)
         y_validate_true = np.argmax(y_validate, axis=0)
-        validate_history[i, 1] = (accuracy_score(y_validate_true.flatten(), y_validate_pred.flatten()))
+        validate_history[i, 1] = (metrics.functions['accuracy'](y_validate_true.flatten(), y_validate_pred.flatten()))
 
 
     #save the parameters
@@ -162,7 +166,7 @@ if __name__ == "__main__":
 
     config = {
         'activation': 'sigmoid',
-        'initialization': 'random',
+        'initialization': 'random_normal',
         'optimisation': 'gradient_descent',
         'loss': 'categorical_cross_entropy',
         'hidden_layers': (36, 36, 36),
