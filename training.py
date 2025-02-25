@@ -174,12 +174,16 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
             if patience_counter >= patience:
                 print(f"Early stopping at epoch {epoch+1}")
                 parameters = best_parameters
-                validate_history = validate_history[:epoch, :]
                 training_history = training_history[:epoch, :]
+                validate_history = validate_history[:epoch, :]
                 break
 
     #save the parameters
     np.save(f'{model_name}.npy', parameters)
+
+    # Save training and validation history for comparison
+    np.save(f'{model_name}_training_history.npy', training_history)
+    np.save(f'{model_name}_validate_history.npy', validate_history)
 
     # Plot learning curve
     metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
@@ -252,7 +256,7 @@ if __name__ == "__main__":
 
     model_name = config_dict.get('model_name', 'model')
     # Save PCA parameters in a file for use in predict script
-    np.savez(f'pca_parameters_{model_name}.npz', eigenvectors=eigenvectors, mean=mean, std=std)
+    np.savez(f'{model_name}_pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
 
     deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 

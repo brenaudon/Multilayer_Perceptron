@@ -66,11 +66,40 @@ if __name__ == "__main__":
     csv_file_path = sys.argv[1]
     model_file_path = sys.argv[2]
 
+    config_dict = {
+        'layer1' : {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'layer2': {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'layer3': {
+            'nb_neurons': 36,
+            'activation': 'sigmoid',
+            'initialization': 'random_normal',
+        },
+        'optimisation': 'gradient_descent',
+        'learning_rate': 0.002,
+        'batch_size': 8,
+        'epochs': 1500,
+        'patience': 8,
+        'dropout_rate': 0.1,
+        'l1_lambda': 0.0,
+        'l2_lambda': 0.0,
+        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'],
+        'model_name': 'model',
+    }
+
     # Load the data from the CSV file
     df = pd.read_csv(csv_file_path, header=None)
 
     # Get the pca parameters from file
-    pca_params = np.load('pca_parameters.npz', allow_pickle=True)
+    model_name = config_dict.get('model_name')
+    pca_params = np.load(f'{model_name}_pca_parameters.npz', allow_pickle=True)
 
     # Accessing the parameters
     eigenvectors = pca_params['eigenvectors']
@@ -91,32 +120,7 @@ if __name__ == "__main__":
     # Open the parameters file
     parameters = np.load(model_file_path, allow_pickle=True).item()
 
-    config = {
-        'layer1' : {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'layer2': {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'layer3': {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'optimisation': 'gradient_descent',
-        'learning_rate': 0.001,
-        'hidden_layers': (36, 36, 36),
-        # 'batch_size': 32,
-        # 'epochs': 15000,
-        'n_iter': 15000,
-        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc']
-    }
-
-    y_pred_probs, y_pred = predict(X, parameters, config)
+    y_pred_probs, y_pred = predict(X, parameters, config_dict)
     y_true = np.argmax(y, axis=0).T.reshape(1, -1)
 
     metrics = MetricFunctions(['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'])
