@@ -69,11 +69,15 @@ if __name__ == "__main__":
     # Load the data from the CSV file
     df = pd.read_csv(csv_file_path, header=None)
 
-    # Open list of features to remove
-    with open('to_remove.txt', 'r') as f:
-        to_remove = f.read().splitlines()
+    # Get the pca parameters from file
+    pca_params = np.load('pca_parameters.npz', allow_pickle=True)
 
-    df, _ = prepare_data_training(df, to_remove)
+    # Accessing the parameters
+    eigenvectors = pca_params['eigenvectors']
+    mean = pca_params['mean']
+    std = pca_params['std']
+
+    df, _, _, _ = prepare_data_training(df, eigenvectors, mean, std)
 
     # Split the data into features and target
     X = df.drop(columns=['ID', 'Diagnosis']).T
@@ -84,7 +88,7 @@ if __name__ == "__main__":
         print("Error: NaN values are present in the target.")
         sys.exit(1)
 
-    #Open the parameters file
+    # Open the parameters file
     parameters = np.load('parameters.npy', allow_pickle=True).item()
 
     config = {

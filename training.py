@@ -89,6 +89,10 @@ def predict(X, parameters, config):
     return np.argmax(Af, axis=0)  # Returns 0 for 'B' and 1 for 'M'
 
 def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
+    model_name = config.get('model_name', 'model')
+    batch_size = config.get('batch_size', 32)
+    epochs = config.get('epochs', 50)
+    learning_rate = config.get('learning_rate', 0.002)
 
     # initialise parameters
     c = 1
@@ -101,40 +105,53 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
     parameters = initialisation(dimensions, config)
 
-    # numpy table to store training history
-    training_history = np.zeros((int(config.get('n_iter')), len(config.get('metrics')) + 1))
-    validate_history = np.zeros((int(config.get('n_iter')), len(config.get('metrics')) + 1))
-
-    c_len = len(parameters) // 2
-
     metrics = MetricFunctions(config.get('metrics'))
 
-    # gradient descent
-    for i in tqdm(range(config.get('n_iter'))):
+    # numpy table to store model metrics history
+    training_history = np.zeros((epochs, len(config.get('metrics')) + 1))
+    validate_history = np.zeros((epochs, len(config.get('metrics')) + 1))
 
+    c_len = len(parameters) // 2
+    num_batches = X_train.shape[1] // batch_size
+
+
+    # Training loop with mini-batch gradient descent and early stopping
+    for epoch in tqdm(range(epochs)):
+        # Shuffle dataset at the start of each epoch
+        permutation = np.random.permutation(X_train.shape[1])
+        X_train_shuffled = X_train[:, permutation]
+        y_train_shuffled = y_train[:, permutation]
+
+        for i in range(num_batches):
+            start = i * batch_size
+            end = start + batch_size
+            X_batch = X_train_shuffled[:, start:end]
+            y_batch = y_train_shuffled[:, start:end]
+
+            activations = forward_propagation(X_batch, parameters, config)
+            gradients = back_propagation(y_batch, parameters, activations, config)
+            parameters = update(gradients, parameters, learning_rate)
+
+        # Compute training loss and metrics at the end of each epoch
         activations = forward_propagation(X_train, parameters, config)
-        gradients = back_propagation(y_train, parameters, activations, config)
-        parameters = update(gradients, parameters, config.get('learning_rate'))
-        Af = activations['A' + str(c_len)]
-
-        # log_loss and accuracy calcul
-        training_history[i, 0] = (categorical_cross_entropy(y_train, Af))
+        Af = activations[f'A{c_len}']
+        training_history[epoch, 0] = categorical_cross_entropy(y_train, Af)
         y_train_pred = predict(X_train, parameters, config)
         y_train_true = np.argmax(y_train, axis=0)
-        for j, metric in enumerate(config.get('metrics')):
-            training_history[i, 1 + j] = (metrics.functions[metric](y_train_true.flatten(), y_train_pred.flatten()))
+        for j, metric in enumerate(config.get('metrics', [])):
+            training_history[epoch, 1 + j] = (metrics.functions[metric](y_train_true.flatten(), y_train_pred.flatten()))
 
+        # Compute validation loss and metrics at the end of each epoch
         activations_validate = forward_propagation(X_validate, parameters, config)
-        Af_validate = activations_validate['A' + str(c_len)]
-        validate_history[i, 0] = (categorical_cross_entropy(y_validate, Af_validate))
+        Af_validate = activations_validate[f'A{c_len}']
+        validate_history[epoch, 0] = categorical_cross_entropy(y_validate, Af_validate)
         y_validate_pred = predict(X_validate, parameters, config)
         y_validate_true = np.argmax(y_validate, axis=0)
-        for j, metric in enumerate(config.get('metrics')):
-            validate_history[i, 1 + j] = (metrics.functions[metric](y_validate_true.flatten(), y_validate_pred.flatten()))
-
+        for j, metric in enumerate(config.get('metrics', [])):
+            validate_history[epoch, 1 + j] = metrics.functions[metric](y_validate_true.flatten(), y_validate_pred.flatten())
 
     #save the parameters
-    np.save('parameters.npy', parameters)
+    np.save(f'{model_name}.npy', parameters)
 
     # Plot learning curve
     metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
@@ -166,16 +183,18 @@ if __name__ == "__main__":
     # Load the data from the CSV file
     df_train, df_validate = split_csv(csv_file_path, 90, True)
 
-    df_train, to_remove = prepare_data_training(df_train)
-    df_validate, _ = prepare_data_training(df_validate, to_remove)
+    df_train, eigenvectors, mean, std = prepare_data_training(df_train)
+    df_validate, _, _, _ = prepare_data_training(df_validate, eigenvectors, mean, std)
 
     # Split the data into features and target
     X_train = df_train.drop(columns=['ID', 'Diagnosis']).T
+    X_train = X_train.to_numpy()
     y_train = np.array(df_train['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
     X_validate = df_validate.drop(columns=['ID', 'Diagnosis']).T
+    X_validate = X_validate.to_numpy()
     y_validate = np.array(df_validate['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
 
-    config = {
+    config_dict = {
         'layer1' : {
             'nb_neurons': 36,
             'activation': 'sigmoid',
@@ -194,13 +213,13 @@ if __name__ == "__main__":
         'optimisation': 'gradient_descent',
         'learning_rate': 0.002,
         'hidden_layers': (36, 36, 36),
-        # 'batch_size': 32,
-        # 'epochs': 15000,
-        'n_iter': 15000,
-        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc']
+        'batch_size': 8,
+        'epochs': 250,
+        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'],
+        'model_name': 'model',
     }
 
-    deep_neural_network(X_train, y_train, X_validate, y_validate, config)
+    deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 
     print("Training done!")
 

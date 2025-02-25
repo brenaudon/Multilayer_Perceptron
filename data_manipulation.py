@@ -22,54 +22,77 @@ def normalize_numeric_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def get_most_correlated_features_to_remove(df: pd.DataFrame) -> list:
-    """Find the most correlated features in the data and return a list of features to remove.
+def standardize_data(data: np.ndarray) -> np.ndarray:
+    """Standardize data to zero mean and unit variance."""
+    return (data - np.mean(data, axis=0)) / np.std(data, axis=0)
 
-    @param df: The DataFrame containing the data.
-    @type  df: pd.DataFrame
+def compute_pca(df, variance_threshold: float = 0.95):
+    """Compute PCA only on training data and return the transformation matrix."""
 
-    @return: The list of features to remove because they have a high correlation with another feature.
-    @rtype:  list
-    """
+    numeric_df = df.drop(columns=['ID', 'Diagnosis'])
+    data = numeric_df.values
 
-    numeric_df = df.select_dtypes(include=['float64', 'int64']).drop(columns=['ID'])
-    correlation_matrix = numeric_df.corr().abs()
-    upper_triangle = correlation_matrix.where(
-        np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool)
-    )
-    #make a list of every couple of features with a correlation higher than 0.95 (keep couples)
-    most_correlated = upper_triangle[upper_triangle > 0.9].stack().index.tolist()
+    # Standardize training data
+    train_standardized = standardize_data(numeric_df)
 
-    to_remove = []
+    # Compute covariance matrix
+    covariance_matrix = np.cov(train_standardized, rowvar=False)
 
-    for couple in most_correlated:
-        if couple[0] not in to_remove and couple[1] not in to_remove:
-            to_remove.append(couple[1])
+    # Compute eigenvalues & eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
 
-    #save to_remove in a config file
-    with open('to_remove.txt', 'w') as f:
-        for item in to_remove:
-            f.write("%s\n" % item)
+    # Sort eigenvalues in descending order
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    sorted_eigenvalues = eigenvalues[sorted_indices]
+    sorted_eigenvectors = eigenvectors[:, sorted_indices]
 
-    return to_remove
+    # Compute explained variance ratio
+    explained_variance_ratio = sorted_eigenvalues / np.sum(sorted_eigenvalues)
+    cumulative_variance = np.cumsum(explained_variance_ratio)
 
-def prepare_data_training(df: pandas.DataFrame, to_remove: list | None = None) -> pandas.DataFrame:
-    # Count the number of columns
-    num_features = df.shape[1]
+    # Select number of components to retain at least the variance_threshold
+    num_components = np.argmax(cumulative_variance >= variance_threshold) + 1
 
-    # Create an adequate number of features
-    features = ['ID', 'Diagnosis']
-    features += [f'feature_{i}' for i in range(num_features - 2)]
+    # Select the top eigenvectors
+    top_eigenvectors = sorted_eigenvectors[:, :num_components]
 
-    # Assign the features as column names
-    df.columns = features
+    print(f"PCA retained {num_components} components, explaining {cumulative_variance[num_components-1]:.2%} variance.")
 
-    # Normalize the numeric features
+    return top_eigenvectors, np.mean(data, axis=0), np.std(data, axis=0)
+
+def apply_pca(df, eigenvectors: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
+    """Apply learned PCA transformation to new data."""
+    numeric_df = df.drop(columns=['ID', 'Diagnosis']).values
+    standardized_data = (numeric_df - mean) / std  # Standardize using training mean/std
+    return np.dot(standardized_data, eigenvectors)
+
+def prepare_data_training(df: pd.DataFrame, eigenvectors = None, mean = None, std = None):
+    """Prepare data: normalize, remove correlated features, and apply PCA if needed."""
+
+    # Assign column names if missing
+    df.columns = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(df.shape[1] - 2)]
+
+    # Extract 'ID' and 'Diagnosis' before transformation
+    id_col = df[['ID']]
+    diagnosis_col = df[['Diagnosis']]
+
+    # Normalize numeric features
     df = normalize_numeric_features(df)
 
-    # Remove the most correlated features
-    if to_remove is None:
-        to_remove = get_most_correlated_features_to_remove(df)
-    df = df.drop(columns=to_remove)
+    # Compute PCA on training set only
+    if eigenvectors is None or mean is None or std is None:
+        eigenvectors, mean, std = compute_pca(df, variance_threshold=0.95)
+        # Save PCA parameters in a file for use in predict script
+        np.savez('pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
 
-    return df, to_remove
+    # Transform both training and validation sets
+    pca_transformed = apply_pca(df, eigenvectors, mean, std)
+
+    # Convert PCA result into a DataFrame
+    pca_df = pd.DataFrame(pca_transformed, columns=[f'PC{i+1}' for i in range(pca_transformed.shape[1])], index=df.index)
+
+    # Concatenate 'ID' and 'Diagnosis' back with PCA-transformed data
+    final_df = pd.concat([id_col, diagnosis_col, pca_df], axis=1)
+
+    return final_df, eigenvectors, mean, std
+

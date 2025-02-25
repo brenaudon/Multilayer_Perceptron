@@ -6,7 +6,7 @@ def split_csv(file_path, percentage, save = False):
     df = pd.read_csv(file_path, header=None)
 
     # Shuffle the DataFrame
-    df = df.sample(frac=1, random_state=10).reset_index(drop=True)
+    df = df.sample(frac=1, random_state=420).reset_index(drop=True)
 
     # Calculate the split index
     split_index = int(len(df) * (percentage / 100))
