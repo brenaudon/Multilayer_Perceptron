@@ -7,6 +7,7 @@ from cut_dataset import split_csv
 from activation_functions import ActivationFunction, softmax
 from initialization_functions import InitializationFunction
 from metrics_functions import MetricFunctions
+from schedule_functions import ScheduleFunction
 
 def categorical_cross_entropy(y_true, y_pred):
     m = y_true.shape[1]
@@ -79,13 +80,15 @@ def back_propagation(y, parameters, activations, config):
 
     return gradients
 
-def update(gradients, parameters, config):
-    learning_rate = config.get('learning_rate', 0.002)
+def update(gradients, parameters, epoch, config):
+    schedule_function = ScheduleFunction(config.get('schedule_function')) if config.get('schedule_function') else None
+    initial_learning_rate = config.get('initial_learning_rate', 0.01) if schedule_function else config.get('learning_rate', 0.002)
     l1_lambda = config.get('l1_lambda', 0.0)
     l2_lambda = config.get('l2_lambda', 0.0)
     c_len = len(parameters) // 2
 
     for c in range(1, c_len + 1):
+        learning_rate = schedule_function.function(epoch, initial_lr=initial_learning_rate) if schedule_function else initial_learning_rate
         parameters['W' + str(c)] -= learning_rate * (gradients['dW' + str(c)] + l1_lambda * np.sign(parameters['W' + str(c)]) + l2_lambda * parameters['W' + str(c)])
         parameters['b' + str(c)] -= learning_rate * gradients['db' + str(c)]
 
@@ -141,7 +144,7 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
             activations = forward_propagation(X_batch, parameters, config)
             gradients = back_propagation(y_batch, parameters, activations, config)
-            parameters = update(gradients, parameters, config)
+            parameters = update(gradients, parameters, epoch, config)
 
         # Compute training loss and metrics at the end of each epoch
         activations = forward_propagation(X_train, parameters, config, training=False)
