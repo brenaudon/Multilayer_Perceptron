@@ -13,6 +13,11 @@ def categorical_cross_entropy(y_true, y_pred):
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
 
+def dropout_layer(A, dropout_rate):
+    """Applies dropout to activations A with probability dropout_rate."""
+    dropout_mask = (np.random.rand(*A.shape) < dropout_rate) / (1 - dropout_rate)
+    return A * dropout_mask
+
 def initialisation(dimensions, config):
     parameters = {}
     c_len = len(dimensions)
@@ -29,11 +34,10 @@ def initialisation(dimensions, config):
 
     return parameters
 
-def forward_propagation(X, parameters, config):
-
+def forward_propagation(X, parameters, config, training=True):
     activations = {'A0': X}
-
     c_len = len(parameters) // 2
+    dropout_rate = config.get('dropout_rate', 0.0)  # Default 0%, no dropout
 
     for c in range(1, c_len + 1):
         Z = parameters['W' + str(c)].dot(activations['A' + str(c - 1)]) + parameters['b' + str(c)]
@@ -42,11 +46,14 @@ def forward_propagation(X, parameters, config):
             activations['A' + str(c)] = softmax(Z)
         else:
             layer = config.get('layer' + str(c))
-            if layer is not None:
-                 af = ActivationFunction(layer.get('activation', 'sigmoid'))
-            else :
-                af = ActivationFunction('sigmoid')
-            activations['A' + str(c)] = af.function(Z)
+            af = ActivationFunction(layer.get('activation', 'sigmoid') if layer else 'sigmoid')
+            A = af.function(Z)
+
+            if training:  # Apply dropout only during training
+                A = dropout_layer(A, dropout_rate)
+
+            activations['A' + str(c)] = A
+
     return activations
 
 def back_propagation(y, parameters, activations, config):
@@ -72,18 +79,20 @@ def back_propagation(y, parameters, activations, config):
 
     return gradients
 
-def update(gradients, parameters, learning_rate):
-
+def update(gradients, parameters, config):
+    learning_rate = config.get('learning_rate', 0.002)
+    l1_lambda = config.get('l1_lambda', 0.0)
+    l2_lambda = config.get('l2_lambda', 0.0)
     c_len = len(parameters) // 2
 
     for c in range(1, c_len + 1):
-        parameters['W' + str(c)] = parameters['W' + str(c)] - learning_rate * gradients['dW' + str(c)]
-        parameters['b' + str(c)] = parameters['b' + str(c)] - learning_rate * gradients['db' + str(c)]
+        parameters['W' + str(c)] -= learning_rate * (gradients['dW' + str(c)] + l1_lambda * np.sign(parameters['W' + str(c)]) + l2_lambda * parameters['W' + str(c)])
+        parameters['b' + str(c)] -= learning_rate * gradients['db' + str(c)]
 
     return parameters
 
 def predict(X, parameters, config):
-    activations = forward_propagation(X, parameters, config)
+    activations = forward_propagation(X, parameters, config, training=False)
     c_len = len(parameters) // 2
     Af = activations['A' + str(c_len)]
     return np.argmax(Af, axis=0)  # Returns 0 for 'B' and 1 for 'M'
@@ -92,7 +101,9 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     model_name = config.get('model_name', 'model')
     batch_size = config.get('batch_size', 32)
     epochs = config.get('epochs', 50)
-    learning_rate = config.get('learning_rate', 0.002)
+    patience = config.get('patience', 10)  # Early stopping patience
+    best_val_loss = float('inf')
+    patience_counter = 0
 
     # initialise parameters
     c = 1
@@ -104,6 +115,7 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     dimensions.append(y_train.shape[0])
 
     parameters = initialisation(dimensions, config)
+    best_parameters = parameters.copy()
 
     metrics = MetricFunctions(config.get('metrics'))
 
@@ -113,7 +125,6 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
     c_len = len(parameters) // 2
     num_batches = X_train.shape[1] // batch_size
-
 
     # Training loop with mini-batch gradient descent and early stopping
     for epoch in tqdm(range(epochs)):
@@ -130,10 +141,10 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
             activations = forward_propagation(X_batch, parameters, config)
             gradients = back_propagation(y_batch, parameters, activations, config)
-            parameters = update(gradients, parameters, learning_rate)
+            parameters = update(gradients, parameters, config)
 
         # Compute training loss and metrics at the end of each epoch
-        activations = forward_propagation(X_train, parameters, config)
+        activations = forward_propagation(X_train, parameters, config, training=False)
         Af = activations[f'A{c_len}']
         training_history[epoch, 0] = categorical_cross_entropy(y_train, Af)
         y_train_pred = predict(X_train, parameters, config)
@@ -142,13 +153,27 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
             training_history[epoch, 1 + j] = (metrics.functions[metric](y_train_true.flatten(), y_train_pred.flatten()))
 
         # Compute validation loss and metrics at the end of each epoch
-        activations_validate = forward_propagation(X_validate, parameters, config)
+        activations_validate = forward_propagation(X_validate, parameters, config, training=False)
         Af_validate = activations_validate[f'A{c_len}']
         validate_history[epoch, 0] = categorical_cross_entropy(y_validate, Af_validate)
         y_validate_pred = predict(X_validate, parameters, config)
         y_validate_true = np.argmax(y_validate, axis=0)
         for j, metric in enumerate(config.get('metrics', [])):
             validate_history[epoch, 1 + j] = metrics.functions[metric](y_validate_true.flatten(), y_validate_pred.flatten())
+
+        # Early Stopping Check
+        if validate_history[epoch, 0] < best_val_loss:
+            best_val_loss = validate_history[epoch, 0]
+            patience_counter = 0
+            best_parameters = parameters.copy()
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                print(f"Early stopping at epoch {epoch+1}")
+                parameters = best_parameters
+                validate_history = validate_history[:epoch, :]
+                training_history = training_history[:epoch, :]
+                break
 
     #save the parameters
     np.save(f'{model_name}.npy', parameters)
@@ -212,17 +237,20 @@ if __name__ == "__main__":
         },
         'optimisation': 'gradient_descent',
         'learning_rate': 0.002,
-        'hidden_layers': (36, 36, 36),
         'batch_size': 8,
-        'epochs': 250,
+        'epochs': 1500,
+        'patience': 8,
+        'dropout_rate': 0.1,
+        'l1_lambda': 0.0,
+        'l2_lambda': 0.0,
         'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'],
         'model_name': 'model',
     }
 
+    model_name = config_dict.get('model_name', 'model')
+    # Save PCA parameters in a file for use in predict script
+    np.savez(f'pca_parameters_{model_name}.npz', eigenvectors=eigenvectors, mean=mean, std=std)
+
     deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 
     print("Training done!")
-
-
-
-

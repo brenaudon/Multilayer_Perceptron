@@ -1,4 +1,3 @@
-import pandas
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -82,8 +81,6 @@ def prepare_data_training(df: pd.DataFrame, eigenvectors = None, mean = None, st
     # Compute PCA on training set only
     if eigenvectors is None or mean is None or std is None:
         eigenvectors, mean, std = compute_pca(df, variance_threshold=0.95)
-        # Save PCA parameters in a file for use in predict script
-        np.savez('pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
 
     # Transform both training and validation sets
     pca_transformed = apply_pca(df, eigenvectors, mean, std)

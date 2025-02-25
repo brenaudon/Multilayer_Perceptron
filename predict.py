@@ -32,7 +32,7 @@ def predict(X, parameters, config):
     @return: The predicted probabilities and the predicted classes.
     @rtype:  tuple(np.ndarray, np.ndarray)
     """
-    activations = forward_propagation(X, parameters, config)
+    activations = forward_propagation(X, parameters, config, training=False)
     c_len = len(parameters) // 2
     probabilities = activations['A' + str(c_len)]  # Softmax or Sigmoid outputs
     return probabilities, np.argmax(probabilities, axis=0)  # Return the class with the highest probability
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Open the parameters file
-    parameters = np.load('parameters.npy', allow_pickle=True).item()
+    parameters = np.load(model_file_path, allow_pickle=True).item()
 
     config = {
         'layer1' : {
