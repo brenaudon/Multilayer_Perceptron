@@ -106,6 +106,8 @@ if __name__ == "__main__":
     mean = pca_params['mean']
     std = pca_params['std']
 
+    pca_params.close()
+
     df, _, _, _ = prepare_data_training(df, eigenvectors, mean, std)
 
     # Split the data into features and target
