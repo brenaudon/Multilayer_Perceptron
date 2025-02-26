@@ -78,7 +78,7 @@ def back_propagation(y, parameters, activations, config):
     return gradients
 
 def update(gradients, parameters, epoch, config):
-    schedule_function = ScheduleFunction(config.get('schedule_function')) if config.get('schedule_function') else None
+    schedule_function = ScheduleFunction(config.get('schedule_function'), config) if config.get('schedule_function') else None
     initial_learning_rate = config.get('initial_learning_rate', 0.01) if schedule_function else config.get('learning_rate', 0.002)
     l1_lambda = config.get('l1_lambda', 0.0)
     l2_lambda = config.get('l2_lambda', 0.0)
