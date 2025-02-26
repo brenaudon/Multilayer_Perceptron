@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 import sys
+from tqdm import tqdm
 from data_manipulation import prepare_data_training
 from cut_dataset import split_csv
 from activation_functions import ActivationFunction, softmax
 from initialization_functions import InitializationFunction
 from metrics_functions import MetricFunctions
-from schedule_functions import ScheduleFunction
+from optimization_functions import OptimizationFunction
 
 def categorical_cross_entropy(y_true, y_pred):
     m = y_true.shape[1]
@@ -58,7 +58,6 @@ def forward_propagation(X, parameters, config, training=True):
     return activations
 
 def back_propagation(y, parameters, activations, config):
-
     m = y.shape[1]
     c_len = len(parameters) // 2
     gradients = {}
@@ -78,24 +77,53 @@ def back_propagation(y, parameters, activations, config):
     return gradients
 
 def update(gradients, parameters, epoch, config):
-    schedule_function = ScheduleFunction(config.get('schedule_function'), config) if config.get('schedule_function') else None
-    initial_learning_rate = config.get('initial_learning_rate', 0.01) if schedule_function else config.get('learning_rate', 0.002)
-    l1_lambda = config.get('l1_lambda', 0.0)
-    l2_lambda = config.get('l2_lambda', 0.0)
-    c_len = len(parameters) // 2
-
-    for c in range(1, c_len + 1):
-        learning_rate = schedule_function.function(epoch, initial_lr=initial_learning_rate) if schedule_function else initial_learning_rate
-        parameters['W' + str(c)] -= learning_rate * (gradients['dW' + str(c)] + l1_lambda * np.sign(parameters['W' + str(c)]) + l2_lambda * parameters['W' + str(c)])
-        parameters['b' + str(c)] -= learning_rate * gradients['db' + str(c)]
-
-    return parameters
+    optimization_function = OptimizationFunction(config.get('optimisation', 'gradient_descent'), config)
+    return optimization_function.function(gradients, parameters, epoch)
 
 def predict(X, parameters, config):
     activations = forward_propagation(X, parameters, config, training=False)
     c_len = len(parameters) // 2
     Af = activations['A' + str(c_len)]
     return np.argmax(Af, axis=0)  # Returns 0 for 'B' and 1 for 'M'
+
+def evaluate(X, y, epoch, history, parameters, config):
+    max_index = len(parameters) // 2
+    metrics = MetricFunctions(config.get('metrics'))
+
+    activations = forward_propagation(X, parameters, config, training=False)
+    Af = activations[f'A{max_index}']
+    history[epoch, 0] = categorical_cross_entropy(y, Af)
+    y_pred = predict(X, parameters, config)
+    y_true = np.argmax(y, axis=0)
+    for j, metric in enumerate(config.get('metrics', [])):
+        history[epoch, 1 + j] = (metrics.functions[metric](y_true.flatten(), y_pred.flatten()))
+    return history
+
+def save_model(model_name, parameters, training_history, validate_history):
+    #save the parameters
+    np.save(f'{model_name}.npy', parameters)
+
+    # Save training and validation history for comparison
+    np.save(f'{model_name}_training_history.npy', training_history)
+    np.save(f'{model_name}_validate_history.npy', validate_history)
+
+def plot_learning_curve(training_history, validate_history, config):
+    metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
+    num_metrics = len(metrics)
+    nb_cols = min(4, num_metrics + 1)  # Max 4 columns per row
+    nb_rows = (num_metrics + 1 + nb_cols - 1) // nb_cols  # Compute the number of rows needed
+
+    plt.figure(figsize=(nb_cols * 4, nb_rows * 3))
+    plt.subplot(nb_rows, 4, 1)
+    plt.plot(training_history[:, 0], label='training loss')
+    plt.plot(validate_history[:, 0], 'orange', linestyle='--', label='validation loss')
+    plt.legend()
+    for j, metric in enumerate(config.get('metrics')):
+        plt.subplot(nb_rows, 4, 2 + j)
+        plt.plot(training_history[:, 1 + j], label=f'training {metric}')
+        plt.plot(validate_history[:, 1 + j], 'orange', linestyle='--', label=f'validation {metric}')
+        plt.legend()
+    plt.show()
 
 def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     model_name = config.get('model_name', 'model')
@@ -109,15 +137,13 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     c = 1
     dimensions = []
     while config.get('layer' + str(c)) is not None:
-        dimensions.append(config.get('layer' + str(c)).get('nb_neurons'))
+        dimensions.append(config.get('layer' + str(c)).get('nb_neurons', 24))
         c += 1
     dimensions.insert(0, X_train.shape[0])
     dimensions.append(y_train.shape[0])
 
     parameters = initialisation(dimensions, config)
     best_parameters = parameters.copy()
-
-    metrics = MetricFunctions(config.get('metrics'))
 
     # numpy table to store model metrics history
     training_history = np.zeros((epochs, len(config.get('metrics')) + 1))
@@ -144,22 +170,10 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
             parameters = update(gradients, parameters, epoch, config)
 
         # Compute training loss and metrics at the end of each epoch
-        activations = forward_propagation(X_train, parameters, config, training=False)
-        Af = activations[f'A{c_len}']
-        training_history[epoch, 0] = categorical_cross_entropy(y_train, Af)
-        y_train_pred = predict(X_train, parameters, config)
-        y_train_true = np.argmax(y_train, axis=0)
-        for j, metric in enumerate(config.get('metrics', [])):
-            training_history[epoch, 1 + j] = (metrics.functions[metric](y_train_true.flatten(), y_train_pred.flatten()))
+        training_history = evaluate(X_train, y_train, epoch, training_history, parameters, config)
 
         # Compute validation loss and metrics at the end of each epoch
-        activations_validate = forward_propagation(X_validate, parameters, config, training=False)
-        Af_validate = activations_validate[f'A{c_len}']
-        validate_history[epoch, 0] = categorical_cross_entropy(y_validate, Af_validate)
-        y_validate_pred = predict(X_validate, parameters, config)
-        y_validate_true = np.argmax(y_validate, axis=0)
-        for j, metric in enumerate(config.get('metrics', [])):
-            validate_history[epoch, 1 + j] = metrics.functions[metric](y_validate_true.flatten(), y_validate_pred.flatten())
+        validate_history = evaluate(X_validate, y_validate, epoch, validate_history, parameters, config)
 
         # Early Stopping Check
         if validate_history[epoch, 0] < best_val_loss:
@@ -175,30 +189,11 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
                 validate_history = validate_history[:epoch, :]
                 break
 
-    #save the parameters
-    np.save(f'{model_name}.npy', parameters)
-
-    # Save training and validation history for comparison
-    np.save(f'{model_name}_training_history.npy', training_history)
-    np.save(f'{model_name}_validate_history.npy', validate_history)
+    # Save model parameters and training and validate history for future model comparisons
+    save_model(model_name, parameters, training_history, validate_history)
 
     # Plot learning curve
-    metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
-    num_metrics = len(metrics)
-    nb_cols = min(4, num_metrics + 1)  # Max 4 columns per row
-    nb_rows = (num_metrics + 1 + nb_cols - 1) // nb_cols  # Compute the number of rows needed
-
-    plt.figure(figsize=(nb_cols * 4, nb_rows * 3))
-    plt.subplot(nb_rows, 4, 1)
-    plt.plot(training_history[:, 0], label='training loss')
-    plt.plot(validate_history[:, 0], 'orange', linestyle='--', label='validation loss')
-    plt.legend()
-    for j, metric in enumerate(config.get('metrics')):
-        plt.subplot(nb_rows, 4, 2 + j)
-        plt.plot(training_history[:, 1 + j], label=f'training {metric}')
-        plt.plot(validate_history[:, 1 + j], 'orange', linestyle='--', label=f'validation {metric}')
-        plt.legend()
-    plt.show()
+    plot_learning_curve(training_history, validate_history, config)
 
     return training_history
 
