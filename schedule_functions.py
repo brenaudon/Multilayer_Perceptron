@@ -15,17 +15,23 @@ class ScheduleFunction:
 
     @ivar name: The name of the learning rate schedule function.
     @type name: str
+    @ivar config: The configuration dictionary for the neural network.
+    @type config: dict
     @ivar function: The learning rate schedule function.
     @type function: function
+    @ivar lr: The initial learning rate for the schedule function.
+    @type lr: float
     @ivar schedule_functions: Dictionary of available learning rate schedule functions.
     @type schedule_functions: dictionary
     """
-    def __init__(self, name, initial_lr=0.01, **kwargs):
+    def __init__(self, name, config):
         """
         Initialize the ScheduleFunction class with the given learning rate schedule function name.
 
         @param name: The name of the learning rate schedule function.
         @type  name: str
+        @param config: The configuration dictionary for the neural network.
+        @type  config: dict
         """
         self.schedule_functions = {
             'step': self.step_decay,
@@ -35,8 +41,8 @@ class ScheduleFunction:
         }
 
         self.name = name
-        self.lr = initial_lr
-        self.kwargs = kwargs
+        self.lr = config.get("initial_learning_rate", config.get("learning_rate", 0.01))
+        self.config = config
         self.function = self.schedule_functions.get(name, self.unknown_schedule)
 
     def unknown_schedule(self):
@@ -55,8 +61,8 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        drop_factor = self.kwargs.get("drop_factor", 0.1)
-        epochs_drop = self.kwargs.get("epochs_drop", 10)
+        drop_factor = self.config.get("drop_factor", 0.1)
+        epochs_drop = self.config.get("epochs_drop", 10)
         return self.lr * (drop_factor ** (epoch // epochs_drop))
 
     def exponential_decay(self, epoch):
@@ -69,7 +75,7 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        decay_rate = self.kwargs.get("decay_rate", 0.01)
+        decay_rate = self.config.get("decay_rate", 0.01)
         return self.lr * np.exp(-decay_rate * epoch)
 
     def time_based_decay(self, epoch):
@@ -82,7 +88,7 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        decay_rate = self.kwargs.get("decay_rate", 0.01)
+        decay_rate = self.config.get("decay_rate", 0.01)
         return self.lr / (1 + decay_rate * epoch)
 
     def cosine_annealing(self, epoch):
@@ -95,5 +101,5 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        total_epochs = self.kwargs.get("total_epochs", 100)
+        total_epochs = self.config.get("total_epochs", 100)
         return self.lr * 0.5 * (1 + np.cos(np.pi * epoch / total_epochs))

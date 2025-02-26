@@ -71,10 +71,7 @@ def back_propagation(y, parameters, activations, config):
 
         if c > 1:
             layer = config.get('layer' + str(c))
-            if layer is not None:
-                af = ActivationFunction(layer.get('activation', 'sigmoid'))
-            else :
-                af = ActivationFunction('sigmoid')
+            af = ActivationFunction(layer.get('activation', 'sigmoid')) if layer else ActivationFunction('sigmoid')
             dA_prev = np.dot(parameters['W' + str(c)].T, dZ)
             dZ = dA_prev * af.derivative(activations['Z' + str(c - 1)])
 
