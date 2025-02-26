@@ -20,7 +20,7 @@ class ScheduleFunction:
     @ivar schedule_functions: Dictionary of available learning rate schedule functions.
     @type schedule_functions: dictionary
     """
-    def __init__(self, name):
+    def __init__(self, name, initial_lr=0.01, **kwargs):
         """
         Initialize the ScheduleFunction class with the given learning rate schedule function name.
 
@@ -30,65 +30,70 @@ class ScheduleFunction:
         self.schedule_functions = {
             'step': self.step_decay,
             'exponential': self.exponential_decay,
+            'time_based': self.time_based_decay,
             'cosine': self.cosine_annealing,
         }
 
         self.name = name
+        self.lr = initial_lr
+        self.kwargs = kwargs
         self.function = self.schedule_functions.get(name, self.unknown_schedule)
 
-    def unknown_schedule(self, dimensions):
+    def unknown_schedule(self):
         """
         Raise an error for an unknown learning rate schedule function.
         """
         raise ValueError(f"Unknown learning rate schedule function: {self.name}")
 
-    def step_decay(self, epoch, initial_lr=0.01, drop_factor=0.1, epochs_drop=10):
+    def step_decay(self, epoch):
         """
-        Step decay learning rate schedule.
+        Step decay learning rate schedule. Reduce LR by a factor (drop_factor) every 'epochs_drop' epochs.
 
         @param epoch: The current epoch.
         @type  epoch: int
-        @param initial_lr: The initial learning rate.
-        @type  initial_lr: float
-        @param drop_factor: The factor to drop the learning rate.
-        @type  drop_factor: float
-        @param epochs_drop: The number of epochs to drop the learning rate.
-        @type  epochs_drop: int
 
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        return initial_lr * (drop_factor ** (epoch // epochs_drop))
+        drop_factor = self.kwargs.get("drop_factor", 0.1)
+        epochs_drop = self.kwargs.get("epochs_drop", 10)
+        return self.lr * (drop_factor ** (epoch // epochs_drop))
 
-    def exponential_decay(self, epoch, initial_lr=0.01, decay_rate=0.01):
+    def exponential_decay(self, epoch):
         """
-        Exponential decay learning rate schedule.
+        Exponential decay learning rate schedule. Reduce LR exponentially: lr = lr0 * exp(-decay_rate * epoch).
 
         @param epoch: The current epoch.
         @type  epoch: int
-        @param initial_lr: The initial learning rate.
-        @type  initial_lr: float
-        @param decay_rate: The decay rate.
-        @type  decay_rate: float
 
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        return initial_lr * np.exp(-decay_rate * epoch)
+        decay_rate = self.kwargs.get("decay_rate", 0.01)
+        return self.lr * np.exp(-decay_rate * epoch)
 
-    def cosine_annealing(self, epoch, initial_lr=0.01, total_epochs=100):
+    def time_based_decay(self, epoch):
+        """
+        Time based decay learning rate schedule. Reduce LR using time-based decay: lr = lr0 / (1 + decay_rate * epoch).
+
+        @param epoch: The current epoch.
+        @type  epoch: int
+
+        @return: The learning rate for the current epoch.
+        @rtype: float
+        """
+        decay_rate = self.kwargs.get("decay_rate", 0.01)
+        return self.lr / (1 + decay_rate * epoch)
+
+    def cosine_annealing(self, epoch):
         """
         Cosine Annealing decay learning rate schedule.
 
         @param epoch: The current epoch.
         @type  epoch: int
-        @param initial_lr: The initial learning rate.
-        @type  initial_lr: float
-        @param total_epochs: The total number of epochs.
-        @type  total_epochs: int
 
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        return initial_lr * 0.5 * (1 + np.cos(np.pi * epoch / total_epochs))
-
+        total_epochs = self.kwargs.get("total_epochs", 100)
+        return self.lr * 0.5 * (1 + np.cos(np.pi * epoch / total_epochs))

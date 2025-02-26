@@ -19,7 +19,7 @@ class MetricFunctions:
         self.names = names
         self.functions = { name: self.metric_functions.get(name, self.unknown_metric) for name in names }
 
-    def unknown_metric(self, y_true, y_pred):
+    def unknown_metric(self):
         raise ValueError(f"Unknown metric function(s) in {self.names}")
 
     def accuracy(self, y_true, y_pred):

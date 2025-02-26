@@ -43,7 +43,7 @@ class InitializationFunction:
         self.name = name
         self.function = self.initialization_functions.get(name, self.unknown_initialization)
 
-    def unknown_initialization(self, dimensions):
+    def unknown_initialization(self):
         """
         Raise an error for an unknown initialization function.
         """
