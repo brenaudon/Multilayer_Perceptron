@@ -102,10 +102,12 @@ def evaluate(X, y, epoch, history, parameters, config):
 def save_model(model_name, parameters, training_history, validate_history):
     #save the parameters
     np.save(f'{model_name}.npy', parameters)
+    print(f"Model parameters saved in {model_name}.npy")
 
     # Save training and validation history for comparison
     np.save(f'{model_name}_training_history.npy', training_history)
     np.save(f'{model_name}_validate_history.npy', validate_history)
+    print(f"Training and validation history saved in {model_name}_training_history.npy and {model_name}_validate_history.npy")
 
 def plot_learning_curve(training_history, validate_history, config):
     metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
@@ -153,7 +155,8 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     num_batches = X_train.shape[1] // batch_size
 
     # Training loop with mini-batch gradient descent and early stopping
-    for epoch in tqdm(range(epochs)):
+    epoch_range = tqdm(range(epochs)) if config.get('display') == 'tqdm' else range(epochs)
+    for epoch in epoch_range:
         # Shuffle dataset at the start of each epoch
         permutation = np.random.permutation(X_train.shape[1])
         X_train_shuffled = X_train[:, permutation]
@@ -175,6 +178,9 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         # Compute validation loss and metrics at the end of each epoch
         validate_history = evaluate(X_validate, y_validate, epoch, validate_history, parameters, config)
 
+        if config.get('display') != 'tqdm':
+            print(f'epoch {epoch+1}/{epochs} - training loss: {training_history[epoch, 0]:.4f} - validation loss: {validate_history[epoch, 0]:.4f}')
+
         # Early Stopping Check
         if validate_history[epoch, 0] < best_val_loss:
             best_val_loss = validate_history[epoch, 0]
@@ -183,7 +189,7 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"Early stopping at epoch {epoch+1}")
+                print(f"Early stopping at epoch {epoch+1}/{epochs}")
                 parameters = best_parameters
                 training_history = training_history[:epoch, :]
                 validate_history = validate_history[:epoch, :]
@@ -218,6 +224,9 @@ if __name__ == "__main__":
     X_validate = X_validate.to_numpy()
     y_validate = np.array(df_validate['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
 
+    print(f'X_train shape: {X_train.shape}')
+    print(f'X_validate shape: {X_validate.shape}')
+
     config_dict = {
         'layer1' : {
             'nb_neurons': 36,
@@ -244,6 +253,7 @@ if __name__ == "__main__":
         'l2_lambda': 0.0,
         'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'],
         'model_name': 'model',
+        'display': 'tqdm',
     }
 
     model_name = config_dict.get('model_name', 'model')
