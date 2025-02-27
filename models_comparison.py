@@ -1,5 +1,3 @@
-from random import sample
-
 import numpy as np
 import glob
 import sys
