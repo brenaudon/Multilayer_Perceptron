@@ -1,13 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import argparse
 from tqdm import tqdm
+from parse_config import parse_config
+from cut_dataset import stratified_split_csv
 from data_manipulation import prepare_data_training
-from cut_dataset import split_csv
 from activation_functions import ActivationFunction, softmax
 from initialization_functions import InitializationFunction
 from metrics_functions import MetricFunctions
 from optimization_functions import OptimizationFunction
+
+SEED = 420
+np.random.seed(SEED)
 
 def categorical_cross_entropy(y_true, y_pred):
     m = y_true.shape[1]
@@ -19,7 +23,7 @@ def dropout_layer(A, dropout_rate):
     dropout_mask = (np.random.rand(*A.shape) < dropout_rate) / (1 - dropout_rate)
     return A * dropout_mask
 
-def initialisation(dimensions, config):
+def initialization(dimensions, config):
     parameters = {}
     c_len = len(dimensions)
 
@@ -27,7 +31,7 @@ def initialisation(dimensions, config):
     for c in range(1, c_len):
         layer = config.get('layer' + str(c))
         if layer is not None:
-            init_funct = InitializationFunction(layer.get('initialization', 'random_normal'))
+            init_funct = InitializationFunction(layer.get('initialization_function', 'random_normal'))
         else :
             init_funct = InitializationFunction('random_normal')
         parameters['W' + str(c)] = init_funct.function((dimensions[c], dimensions[c - 1]))
@@ -77,7 +81,7 @@ def back_propagation(y, parameters, activations, config):
     return gradients
 
 def update(gradients, parameters, epoch, config):
-    optimization_function = OptimizationFunction(config.get('optimisation', 'gradient_descent'), config)
+    optimization_function = OptimizationFunction(config.get('optimization', 'gradient_descent'), config)
     return optimization_function.function(gradients, parameters, epoch)
 
 def predict(X, parameters, config):
@@ -88,15 +92,15 @@ def predict(X, parameters, config):
 
 def evaluate(X, y, epoch, history, parameters, config):
     max_index = len(parameters) // 2
-    metrics = MetricFunctions(config.get('metrics'))
+    metrics = MetricFunctions(config.get('metrics', []))
 
     activations = forward_propagation(X, parameters, config, training=False)
     Af = activations[f'A{max_index}']
-    history[epoch, 0] = categorical_cross_entropy(y, Af)
+    history['loss'][epoch] = categorical_cross_entropy(y, Af)
     y_pred = predict(X, parameters, config)
     y_true = np.argmax(y, axis=0)
-    for j, metric in enumerate(config.get('metrics', [])):
-        history[epoch, 1 + j] = (metrics.functions[metric](y_true.flatten(), y_pred.flatten()))
+    for metric in config.get('metrics', []):
+        history[metric][epoch] = (metrics.functions[metric](y_true.flatten(), y_pred.flatten()))
     return history
 
 def save_model(model_name, parameters, training_history, validate_history):
@@ -117,21 +121,22 @@ def plot_learning_curve(training_history, validate_history, config):
 
     plt.figure(figsize=(nb_cols * 4, nb_rows * 3))
     plt.subplot(nb_rows, 4, 1)
-    plt.plot(training_history[:, 0], label='training loss')
-    plt.plot(validate_history[:, 0], 'orange', linestyle='--', label='validation loss')
+    plt.plot(training_history['loss'][:], label='training loss')
+    plt.plot(validate_history['loss'][:], 'orange', linestyle='--', label='validation loss')
     plt.legend()
-    for j, metric in enumerate(config.get('metrics')):
+    for j, metric in enumerate(config.get('metrics', [])):
         plt.subplot(nb_rows, 4, 2 + j)
-        plt.plot(training_history[:, 1 + j], label=f'training {metric}')
-        plt.plot(validate_history[:, 1 + j], 'orange', linestyle='--', label=f'validation {metric}')
+        plt.plot(training_history[metric][:], label=f'training {metric}')
+        plt.plot(validate_history[metric][:], 'orange', linestyle='--', label=f'validation {metric}')
         plt.legend()
     plt.show()
 
 def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     model_name = config.get('model_name', 'model')
-    batch_size = config.get('batch_size', 32)
-    epochs = config.get('epochs', 50)
-    patience = config.get('patience', 10)  # Early stopping patience
+    batch_size = config.get('batch_size', 8)
+    epochs = config.get('epochs', 2000)
+    early_stopping = True if config.get('early_stopping_patience') is not None else False
+    patience = config.get('early_stopping_patience', 10)  # Early stopping patience
     best_val_loss = float('inf')
     patience_counter = 0
 
@@ -144,18 +149,23 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     dimensions.insert(0, X_train.shape[0])
     dimensions.append(y_train.shape[0])
 
-    parameters = initialisation(dimensions, config)
+    print(f"Model dimensions: {dimensions}")
+
+    parameters = initialization(dimensions, config)
     best_parameters = parameters.copy()
 
-    # numpy table to store model metrics history
-    training_history = np.zeros((epochs, len(config.get('metrics')) + 1))
-    validate_history = np.zeros((epochs, len(config.get('metrics')) + 1))
+    # dictionary to store model metrics history
+    metrics = config.get('metrics', [])
+    training_history = {metric: np.zeros((epochs, 1)) for metric in metrics}
+    training_history['loss'] = np.zeros((epochs, 1))
+    validate_history = {metric: np.zeros((epochs, 1)) for metric in metrics}
+    validate_history['loss'] = np.zeros((epochs, 1))
 
     c_len = len(parameters) // 2
     num_batches = X_train.shape[1] // batch_size
 
     # Training loop with mini-batch gradient descent and early stopping
-    epoch_range = tqdm(range(epochs)) if config.get('display') == 'tqdm' else range(epochs)
+    epoch_range = tqdm(range(epochs)) if config.get('display') is not None and config.get('display') == 'tqdm' else range(epochs)
     for epoch in epoch_range:
         # Shuffle dataset at the start of each epoch
         permutation = np.random.permutation(X_train.shape[1])
@@ -178,22 +188,26 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         # Compute validation loss and metrics at the end of each epoch
         validate_history = evaluate(X_validate, y_validate, epoch, validate_history, parameters, config)
 
-        if config.get('display') != 'tqdm':
+        if config.get('display') is not None and config.get('display') != 'tqdm':
             print(f'epoch {epoch+1}/{epochs} - training loss: {training_history[epoch, 0]:.4f} - validation loss: {validate_history[epoch, 0]:.4f}')
 
         # Early Stopping Check
-        if validate_history[epoch, 0] < best_val_loss:
-            best_val_loss = validate_history[epoch, 0]
-            patience_counter = 0
-            best_parameters = parameters.copy()
-        else:
-            patience_counter += 1
-            if patience_counter >= patience:
-                print(f"Early stopping at epoch {epoch+1}/{epochs}")
-                parameters = best_parameters
-                training_history = training_history[:epoch, :]
-                validate_history = validate_history[:epoch, :]
-                break
+        if early_stopping:
+            if validate_history['loss'][epoch] < best_val_loss:
+                best_val_loss = validate_history['loss'][epoch]
+                patience_counter = 0
+                best_parameters = parameters.copy()
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print(f"Early stopping at epoch {epoch+1}/{epochs}")
+                    parameters = best_parameters
+                    training_history['loss'] = training_history['loss'][:epoch]
+                    validate_history['loss'] = validate_history['loss'][:epoch]
+                    for metric in metrics:
+                        training_history[metric] = training_history[metric][:epoch]
+                        validate_history[metric] = validate_history[metric][:epoch]
+                    break
 
     # Save model parameters and training and validate history for future model comparisons
     save_model(model_name, parameters, training_history, validate_history)
@@ -204,15 +218,23 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     return training_history
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python training.py <data_csv_file_path>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Train a neural network on a dataset with a configuration file.")
 
-    csv_file_path = sys.argv[1]
+    # Define command-line arguments
+    parser.add_argument("--dataset", type=str, required=True, help="Path to the dataset CSV file.")
+    parser.add_argument("--config", type=str, required=True, help="Path to the configuration JSON file.")
 
-    # Load the data from the CSV file
-    df_train, df_validate = split_csv(csv_file_path, 90, True)
+    # Parse arguments
+    args = parser.parse_args()
 
+    # Extract paths
+    csv_file_path = args.dataset
+    config_file_path = args.config
+
+    # Load the data from the CSV file and split it into training and validation sets
+    df_train, df_validate = stratified_split_csv(csv_file_path, 90, True)
+
+    # Prepare the data for training (PCA)
     df_train, eigenvectors, mean, std = prepare_data_training(df_train)
     df_validate, _, _, _ = prepare_data_training(df_validate, eigenvectors, mean, std)
 
@@ -227,38 +249,17 @@ if __name__ == "__main__":
     print(f'X_train shape: {X_train.shape}')
     print(f'X_validate shape: {X_validate.shape}')
 
-    config_dict = {
-        'layer1' : {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'layer2': {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'layer3': {
-            'nb_neurons': 36,
-            'activation': 'sigmoid',
-            'initialization': 'random_normal',
-        },
-        'optimisation': 'gradient_descent',
-        'learning_rate': 0.002,
-        'batch_size': 8,
-        'epochs': 1500,
-        'patience': 8,
-        'dropout_rate': 0.1,
-        'l1_lambda': 0.0,
-        'l2_lambda': 0.0,
-        'metrics': ['accuracy', 'precision', 'recall', 'f1', 'roc_auc', 'pr_auc'],
-        'model_name': 'model',
-        'display': 'tqdm',
-    }
+    # Load the configuration file
+    config_dict = parse_config(config_file_path)
+
+    # Save config for use in predict script
+    np.save(f'{config_dict.get("model_name", "model")}_config.npy', config_dict)
+    print(f"Configuration for this model saved in {config_dict.get('model_name', 'model')}_config.npy")
 
     model_name = config_dict.get('model_name', 'model')
     # Save PCA parameters in a file for use in predict script
     np.savez(f'{model_name}_pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
+    print(f"PCA parameters for data preparation for this model saved in {model_name}_pca_parameters.npz")
 
     deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 

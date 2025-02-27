@@ -51,6 +51,22 @@ class OptimizationFunction:
         """
         raise ValueError(f"Unknown optimization function: {self.optimizer_name}")
 
+    def get_common_variables(self, config):
+        """
+        Get the variables used in the optimization function (common for all types).
+
+        @param config: The configuration dictionary for the neural network.
+        @type  config: dict
+
+        @return: The variables for the optimization function.
+        @rtype: dict
+        """
+        schedule_function = ScheduleFunction(self.config.get('schedule'), self.config) if self.config.get('schedule') else None
+        initial_learning_rate = self.config.get('initial_learning_rate', 0.01) if schedule_function else self.config.get('learning_rate', 0.002)
+        l1_lambda = self.config.get('l1_lambda', 0.0) # No L1 regularization by default
+        l2_lambda = self.config.get('l2_lambda', 0.0) # No L2 regularization by default
+        return schedule_function, initial_learning_rate, l1_lambda, l2_lambda
+
     def gradient_descent(self, gradients, parameters, epoch):
         """
         Gradient Descent optimization function.
@@ -65,10 +81,7 @@ class OptimizationFunction:
         @return: The optimization function with the given learning rate.
         @rtype: function
         """
-        schedule_function = ScheduleFunction(self.config.get('schedule_function'), self.config) if self.config.get('schedule_function') else None
-        initial_learning_rate = self.config.get('initial_learning_rate', 0.01) if schedule_function else self.config.get('learning_rate', 0.002)
-        l1_lambda = self.config.get('l1_lambda', 0.0) # No L1 regularization by default
-        l2_lambda = self.config.get('l2_lambda', 0.0) # No L2 regularization by default
+        schedule_function, initial_learning_rate, l1_lambda, l2_lambda = self.get_common_variables(self.config)
         c_len = len(parameters) // 2
 
         for c in range(1, c_len + 1):
@@ -77,3 +90,17 @@ class OptimizationFunction:
             parameters['b' + str(c)] -= learning_rate * gradients['db' + str(c)]
 
         return parameters
+
+    def nesterov_momentum(self, gradients, parameters, epoch):
+        schedule_function, initial_learning_rate, l1_lambda, l2_lambda = self.get_common_variables(self.config)
+        beta = self.config.get('beta', 0.9)
+        c_len = len(parameters) // 2
+        velocity = {key: np.zeros_like(val) for key, val in parameters.items()}
+        for c in range(1, c_len + 1):
+            learning_rate = schedule_function.function(epoch) if schedule_function else initial_learning_rate
+            velocity['dW' + str(c)] = beta * velocity.get('dW' + str(c), 0) + (1 - beta) * gradients['dW' + str(c)]
+            velocity['db' + str(c)] = beta * velocity.get('db' + str(c), 0) + (1 - beta) * gradients['db' + str(c)]
+            parameters['W' + str(c)] -= learning_rate * (velocity['dW' + str(c)] + l2_lambda * parameters['W' + str(c)] + l1_lambda * np.sign(parameters['W' + str(c)]))
+            parameters['b' + str(c)] -= learning_rate * velocity['db' + str(c)]
+        return parameters
+

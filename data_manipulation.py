@@ -26,7 +26,7 @@ def standardize_data(data: np.ndarray) -> np.ndarray:
     return (data - np.mean(data, axis=0)) / np.std(data, axis=0)
 
 def compute_pca(df, variance_threshold: float = 0.95):
-    """Compute PCA only on training data and return the transformation matrix."""
+    """Compute PCA Principal component analysis only on training data and return the transformation matrix."""
 
     numeric_df = df.drop(columns=['ID', 'Diagnosis'])
     data = numeric_df.values

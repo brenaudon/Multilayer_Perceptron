@@ -41,7 +41,7 @@ class ScheduleFunction:
         }
 
         self.name = name
-        self.lr = config.get("initial_learning_rate", config.get("learning_rate", 0.01))
+        self.lr = config.get('schedule_params').get('initial_learning_rate') if config.get('schedule_params') else config.get('learning_rate', 0.01)
         self.config = config
         self.function = self.schedule_functions.get(name, self.unknown_schedule)
 
@@ -61,8 +61,8 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        drop_factor = self.config.get("drop_factor", 0.1)
-        epochs_drop = self.config.get("epochs_drop", 10)
+        drop_factor = self.config.get('schedule_params').get('drop_factor', 0.1) if self.config.get('schedule_params') else 0.1
+        epochs_drop = self.config.get('schedule_params').get('epochs_drop', 50) if self.config.get('schedule_params') else 10
         return self.lr * (drop_factor ** (epoch // epochs_drop))
 
     def exponential_decay(self, epoch):
@@ -75,7 +75,7 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        decay_rate = self.config.get("decay_rate", 0.01)
+        decay_rate = self.config.get('schedule_params').get('decay_rate', 0.01) if self.config.get('schedule_params') else 0.01
         return self.lr * np.exp(-decay_rate * epoch)
 
     def time_based_decay(self, epoch):
@@ -88,7 +88,7 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        decay_rate = self.config.get("decay_rate", 0.01)
+        decay_rate = self.config.get('schedule_params').get('decay_rate', 0.01) if self.config.get('schedule_params') else 0.01
         return self.lr / (1 + decay_rate * epoch)
 
     def cosine_annealing(self, epoch):
@@ -101,5 +101,5 @@ class ScheduleFunction:
         @return: The learning rate for the current epoch.
         @rtype: float
         """
-        total_epochs = self.config.get("total_epochs", 100)
+        total_epochs = self.config.get("epochs", 200)
         return self.lr * 0.5 * (1 + np.cos(np.pi * epoch / total_epochs))

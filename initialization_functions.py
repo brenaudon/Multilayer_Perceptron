@@ -39,7 +39,7 @@ class InitializationFunction:
             'selu': self.selu,
         }
 
-        np.random.seed(10)  # Reproducibility
+        np.random.seed(84)  # Reproducibility
         self.name = name
         self.function = self.initialization_functions.get(name, self.unknown_initialization)
 
