@@ -8,6 +8,7 @@ Dependencies:
     - pandas
     - sys
     - os
+    - argparse
     - training.py
     - data_manipulation.py
     - metrics_functions.py
@@ -17,6 +18,7 @@ import numpy as np
 import pandas as pd
 import sys
 import os
+import argparse
 from training import forward_propagation
 from data_manipulation import prepare_data_training
 from metrics_functions import MetricFunctions
@@ -61,22 +63,29 @@ def binary_cross_entropy(y_true, y_pred_probs, epsilon=1e-12):
     return loss
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python predict.py <data_csv_file_path> <model_name>")
-        sys.exit(1)
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description="Predict using a trained model and input CSV file.")
 
-    csv_file_path = sys.argv[1]
-    model_name = sys.argv[2]
+    # Define arguments with short versions
+    parser.add_argument("-d", "--data", type=str, required=True, help="Path to the CSV data file.")
+    parser.add_argument("-m", "--model", type=str, required=True, help="Name of the trained model.")
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    csv_file_path = args.data
+    model_name = args.model
+
+    # Get the absolute path of the current script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
 
     if not os.path.exists(csv_file_path):
         print(f"Error: File not found: {csv_file_path}")
         sys.exit(1)
-    if not os.path.exists(f'../models/{model_name}'):
+    if not os.path.exists(f'{script_dir}/../models/{model_name}'):
         print(f"Error: Model not found: {model_name}")
         sys.exit(1)
 
-    # Get the absolute path of the current script
-    script_dir = os.path.dirname(os.path.realpath(__file__))
     model_path = os.path.join(script_dir, '../models', model_name)
 
     config_dict = np.load(f'{model_path}/{model_name}_config.npy', allow_pickle=True).item()

@@ -1,5 +1,6 @@
 import pandas as pd
 import sys
+import argparse
 
 def stratified_split_csv(file_path, percentage, save=False):
     """
@@ -49,15 +50,21 @@ def stratified_split_csv(file_path, percentage, save=False):
     return df_train, df_valid
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python cut_dataset.py <csv_file_path> <percentage>")
-        sys.exit(1)
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description="Split a CSV dataset into training and validation sets.")
 
-    csv_file_path = sys.argv[1]
-    percent = float(sys.argv[2])
+    # Define arguments
+    parser.add_argument("csv_file_path", type=str, help="Path to the CSV file to cut.")
+    parser.add_argument("percentage", type=float, help="Percentage of data to use for training (0-100).")
 
-    if not (0 <= percent <= 100):
+    # Parse arguments
+    args = parser.parse_args()
+
+    csv_file_path = args.csv_file_path
+    percentage = args.percentage
+
+    if not (0 <= percentage <= 100):
         print("Percentage must be between 0 and 100")
         sys.exit(1)
 
-    stratified_split_csv(csv_file_path, percent, True)
+    stratified_split_csv(csv_file_path, percentage, True)
