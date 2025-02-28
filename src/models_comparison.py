@@ -1,3 +1,17 @@
+"""
+This script plots and compares the training history of different trained models.
+
+It reads training and validation history files and generates plots for various metrics.
+
+Dependencies:
+    - numpy
+    - glob
+    - sys
+    - os
+    - argparse
+    - matplotlib.pyplot
+"""
+
 import numpy as np
 import glob
 import sys
@@ -6,6 +20,12 @@ import argparse
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
+    """
+    Main function to visualize and compare the training history of multiple models.
+    
+    The script takes an optional argument:
+        - model_names: Names of the models to plot (leave empty to plot all).
+    """
     # Create an argument parser with a proper description
     parser = argparse.ArgumentParser(description='Plot training history of models')
 

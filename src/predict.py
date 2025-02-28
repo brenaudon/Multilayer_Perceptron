@@ -63,6 +63,13 @@ def binary_cross_entropy(y_true, y_pred_probs, epsilon=1e-12):
     return loss
 
 if __name__ == "__main__":
+    """
+    Main function to perform predictions using a trained model and input CSV file.
+    
+    The script takes two arguments:
+        -d/--data: The path to the CSV data file.
+        -m/--model: The name of the trained model.
+    """
     # Create an argument parser
     parser = argparse.ArgumentParser(description="Predict using a trained model and input CSV file.")
 

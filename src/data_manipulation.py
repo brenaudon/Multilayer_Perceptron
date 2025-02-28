@@ -1,9 +1,25 @@
+"""
+This script provides functions for normalizing and processing dataset features.
+
+It includes:
+    - Normalization of numeric features
+    - Standardization of data
+    - Principal Component Analysis (PCA)
+    - Data preparation for training
+
+Dependencies:
+    - pandas
+    - numpy
+    - sklearn.preprocessing (MinMaxScaler)
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 def normalize_numeric_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize every numeric feature in the DataFrame.
+    """
+    Normalize every numeric feature in the DataFrame.
 
     @param df: The DataFrame containing the data.
     @type  df: pd.DataFrame
@@ -22,11 +38,29 @@ def normalize_numeric_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def standardize_data(data: np.ndarray) -> np.ndarray:
-    """Standardize data to zero mean and unit variance."""
+    """
+    Standardize data to zero mean and unit variance.
+
+    @param data: The data to standardize.
+    @type  data: np.ndarray
+
+    @return: The standardized data.
+    @rtype:  np.ndarray
+    """
     return (data - np.mean(data, axis=0)) / np.std(data, axis=0)
 
 def compute_pca(df, variance_threshold: float = 0.95):
-    """Compute PCA Principal component analysis only on training data and return the transformation matrix."""
+    """
+    Compute PCA (Principal component analysis) and return the transformation matrix (only used on training data then applied to validation set as well so we have the same number of features in both).
+
+    @param df: The DataFrame containing the data.
+    @type  df: pd.DataFrame
+    @param variance_threshold: The threshold for the cumulative variance to retain.
+    @type  variance_threshold: float
+
+    @return: The eigenvectors, mean, and standard deviation of the data.
+    @rtype:  np.ndarray, np.ndarray, np.ndarray
+    """
 
     numeric_df = df.drop(columns=['ID', 'Diagnosis'])
     data = numeric_df.values
@@ -60,13 +94,41 @@ def compute_pca(df, variance_threshold: float = 0.95):
     return top_eigenvectors, np.mean(data, axis=0), np.std(data, axis=0)
 
 def apply_pca(df, eigenvectors: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
-    """Apply learned PCA transformation to new data."""
+    """
+    Apply learned PCA transformation to new data.
+
+    @param df: The DataFrame containing the data.
+    @type  df: pd.DataFrame
+    @param eigenvectors: The eigenvectors learned from the training data.
+    @type  eigenvectors: np.ndarray
+    @param mean: The mean of the training data.
+    @type  mean: np.ndarray
+    @param std: The standard deviation of the training data.
+    @type  std: np.ndarray
+
+    @return: The PCA-transformed data.
+    @rtype:  np.ndarray
+    """
     numeric_df = df.drop(columns=['ID', 'Diagnosis']).values
     standardized_data = (numeric_df - mean) / std  # Standardize using training mean/std
     return np.dot(standardized_data, eigenvectors)
 
 def prepare_data_training(df: pd.DataFrame, eigenvectors = None, mean = None, std = None):
-    """Prepare data: normalize, remove correlated features, and apply PCA if needed."""
+    """
+    Prepare data: normalize, remove correlated features, and apply PCA if needed.
+
+    @param df: The DataFrame containing the data.
+    @type  df: pd.DataFrame
+    @param eigenvectors: The eigenvectors learned from the training data.
+    @type  eigenvectors: np.ndarray
+    @param mean: The mean of the training data.
+    @type  mean: np.ndarray
+    @param std: The standard deviation of the training data.
+    @type  std: np.ndarray
+
+    @return: The DataFrame with PCA-transformed data.
+    @rtype:  pd.DataFrame
+    """
 
     # Assign column names if missing
     df.columns = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(df.shape[1] - 2)]

@@ -1,6 +1,21 @@
+"""
+This script parses and validates configuration files for training neural networks.
+
+It ensures the integrity of layer definitions, learning rate schedules, and optimizers.
+
+Dependencies:
+    - json
+"""
+
 import json
 
 def validate_layers(config):
+    """
+    Validate the part describing layers of a neural network configuration file.
+
+    @param config: The configuration dictionary.
+    @type  config: dict
+    """
     # Extract keys that match "layerX"
     layer_keys = [key for key in config.keys() if key.startswith("layer")]
 
@@ -26,6 +41,13 @@ def validate_layers(config):
 
 
 def warning_schedule_params(config):
+    """
+    Warn the user that default values are used if learning rate schedule parameters are missing.
+
+    @param config: The configuration dictionary.
+    @type  config: dict
+    """
+
     schedule_function = config.get('schedule')
     schedule_params = config.get('schedule_params')
     if schedule_function:
@@ -52,6 +74,12 @@ def warning_schedule_params(config):
         print("Warning: 'learning_rate' not found in configuration file. Using default value of 0.002.")
 
 def warning_optimizer_params(config):
+    """
+    Warn the user that default values are used if optimizer parameters are missing.
+
+    @param config: The configuration dictionary.
+    @type  config: dict
+    """
     optimizer_name = config.get('optimization')
     optimizer_params = config.get('optimizer_params')
     if optimizer_name:
@@ -82,12 +110,12 @@ def warning_optimizer_params(config):
 
 def parse_config(config_file):
     """
-    Parse the configuration file.
+    Parse and validate a neural network configuration file.
 
-    @param config_file: The configuration file path.
+    @param config_file: The path to the JSON configuration file.
     @type  config_file: str
 
-    @return: The configuration dictionary.
+    @return: A dictionary containing the validated configuration parameters.
     @rtype:  dict
     """
     with open(config_file, 'r') as f:

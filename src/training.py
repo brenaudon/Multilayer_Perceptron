@@ -1,30 +1,87 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import argparse
+"""
+This script trains a deep neural network using the provided dataset and configuration file.
+
+It includes:
+    - Data preprocessing
+    - Model initialization
+    - Training with backpropagation
+    - Evaluation and saving of results
+
+Dependencies:
+    - os
+    - tqdm
+    - numpy
+    - argparse
+    - matplotlib.pyplot
+    - cut_dataset.py
+    - parse_config.py
+    - metrics_functions.py
+    - data_manipulation.py
+    - activation_functions.py
+    - optimization_functions.py
+    - initialization_functions.py
+"""
+
 import os
+import argparse
+import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 from parse_config import parse_config
 from cut_dataset import stratified_split_csv
-from data_manipulation import prepare_data_training
-from activation_functions import ActivationFunction, softmax
-from initialization_functions import InitializationFunction
 from metrics_functions import MetricFunctions
+from data_manipulation import prepare_data_training
 from optimization_functions import OptimizationFunction
+from initialization_functions import InitializationFunction
+from activation_functions import ActivationFunction, softmax
+
 
 SEED = 420
 np.random.seed(SEED)
 
 def categorical_cross_entropy(y_true, y_pred):
+    """
+    Compute the categorical cross-entropy loss between true and predicted labels.
+
+    @param y_true: The true labels.
+    @type  y_true: np.ndarray
+    @param y_pred: The predicted labels.
+    @type  y_pred: np.ndarray
+
+    @return: The categorical cross-entropy loss.
+    @rtype:  float
+    """
     m = y_true.shape[1]
     loss = -np.sum(y_true * np.log(y_pred + 1e-9)) / m  # Small epsilon to avoid log(0)
     return loss
 
 def dropout_layer(A, dropout_rate):
-    """Applies dropout to activations A with probability dropout_rate."""
+    """
+    Applies dropout to activations A with probability dropout_rate.
+
+    @param A: The activations to apply dropout to.
+    @type  A: np.ndarray
+    @param dropout_rate: The probability of dropout.
+    @type  dropout_rate: float
+
+    @return: The activations with dropout applied.
+    @rtype:  np.ndarray
+    """
     dropout_mask = (np.random.rand(*A.shape) < dropout_rate) / (1 - dropout_rate)
     return A * dropout_mask
 
 def initialization(dimensions, config):
+    """
+    Initialize the parameters of the deep neural network.
+
+    @param dimensions: The dimensions of the neural network.
+    @type  dimensions: list
+    @param config: The configuration dictionary.
+    @type  config: dict
+
+    @return: The initialized parameters.
+    @rtype:  dict
+    """
     parameters = {}
     c_len = len(dimensions)
 
@@ -41,6 +98,21 @@ def initialization(dimensions, config):
     return parameters
 
 def forward_propagation(X, parameters, config, training=True):
+    """
+    Perform forward propagation through the deep neural network.
+
+    @param X: The input data.
+    @type  X: np.ndarray
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param config: The configuration dictionary.
+    @type  config: dict
+    @param training: Whether we are training or predicting (to apply dropout or not).
+    @type  training: bool
+
+    @return: The activations of each layer.
+    @rtype:  dict
+    """
     activations = {'A0': X}
     c_len = len(parameters) // 2
     dropout_rate = config.get('dropout_rate', 0.0)  # Default 0%, no dropout
@@ -63,6 +135,21 @@ def forward_propagation(X, parameters, config, training=True):
     return activations
 
 def back_propagation(y, parameters, activations, config):
+    """
+    Perform backpropagation through the deep neural network.
+
+    @param y: The true labels.
+    @type  y: np.ndarray
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param activations: The activations of each layer.
+    @type  activations: dict
+    @param config: The configuration dictionary.
+    @type  config: dict
+
+    @return: The gradients of the parameters.
+    @rtype:  dict
+    """
     m = y.shape[1]
     c_len = len(parameters) // 2
     gradients = {}
@@ -82,16 +169,63 @@ def back_propagation(y, parameters, activations, config):
     return gradients
 
 def update(gradients, parameters, epoch, config):
+    """
+    Update the parameters of the neural network using the gradients.
+
+    @param gradients: The gradients of the parameters.
+    @type  gradients: dict
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param epoch: The current epoch.
+    @type  epoch: int
+    @param config: The configuration dictionary.
+    @type  config: dict
+
+    @return: The updated parameters.
+    @rtype:  dict
+    """
     optimization_function = OptimizationFunction(config.get('optimization', 'gradient_descent'), config)
     return optimization_function.function(gradients, parameters, epoch)
 
 def predict(X, parameters, config):
+    """
+    Predict the labels of the input data.
+
+    @param X: The input data.
+    @type  X: np.ndarray
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param config: The configuration dictionary.
+    @type  config: dict
+
+    @return: The predicted labels.
+    @rtype:  np.ndarray
+    """
     activations = forward_propagation(X, parameters, config, training=False)
     c_len = len(parameters) // 2
     Af = activations['A' + str(c_len)]
     return np.argmax(Af, axis=0)  # Returns 0 for 'B' and 1 for 'M'
 
 def evaluate(X, y, epoch, history, parameters, config):
+    """
+    Evaluate the loss and metrics (chosen in config json) of the model on the input data.
+
+    @param X: The input data.
+    @type  X: np.ndarray
+    @param y: The true labels.
+    @type  y: np.ndarray
+    @param epoch: The current epoch.
+    @type  epoch: int
+    @param history: The history of the model metrics.
+    @type  history: dict
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param config: The configuration dictionary.
+    @type  config: dict
+
+    @return: The updated history of the model metrics.
+    @rtype:  dict
+    """
     max_index = len(parameters) // 2
     metrics = MetricFunctions(config.get('metrics', []))
 
@@ -105,6 +239,18 @@ def evaluate(X, y, epoch, history, parameters, config):
     return history
 
 def save_model(model_name, parameters, training_history, validate_history):
+    """
+    Save the model parameters for future usage and training and validation history for future model comparisons.
+
+    @param model_name: The name of the model.
+    @type  model_name: str
+    @param parameters: The parameters of the neural network.
+    @type  parameters: dict
+    @param training_history: The history of the model metrics during training on training dataset.
+    @type  training_history: dict
+    @param validate_history: The history of the model metrics during training on validation dataset.
+    @type  validate_history: dict
+    """
     # Get the absolute path of the current script
     script_dir = os.path.dirname(os.path.realpath(__file__))
     model_path = os.path.join(script_dir, '../models', model_name)
@@ -119,6 +265,16 @@ def save_model(model_name, parameters, training_history, validate_history):
     print(f"Training and validation history saved in models/{model_name}/{model_name}_training_history.npy and models/{model_name}/{model_name}_validate_history.npy")
 
 def plot_learning_curve(training_history, validate_history, config):
+    """
+    Plot the learning curve of the model during training and validation.
+
+    @param training_history: The history of the model metrics during training on training dataset.
+    @type  training_history: dict
+    @param validate_history: The history of the model metrics during training on validation dataset.
+    @type  validate_history: dict
+    @param config: The configuration dictionary.
+    @type  config: dict
+    """
     metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
     num_metrics = len(metrics)
     nb_cols = min(4, num_metrics + 1)  # Max 4 columns per row
@@ -137,6 +293,20 @@ def plot_learning_curve(training_history, validate_history, config):
     plt.show()
 
 def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
+    """
+    Train a deep neural network on the provided dataset.
+
+    @param X_train: The training data.
+    @type  X_train: np.ndarray
+    @param y_train: The training labels.
+    @type  y_train: np.ndarray
+    @param X_validate: The validation data.
+    @type  X_validate: np.ndarray
+    @param y_validate: The validation labels.
+    @type  y_validate: np.ndarray
+    @param config: The configuration dictionary.
+    @type  config: dict
+    """
     model_name = config.get('model_name', 'model')
     batch_size = config.get('batch_size', 8)
     epochs = config.get('epochs', 2000)
@@ -220,9 +390,15 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     # Plot learning curve
     plot_learning_curve(training_history, validate_history, config)
 
-    return training_history
-
 if __name__ == "__main__":
+    """
+    Main function to train a deep neural network on a dataset.
+    
+    The script takes the following arguments:
+        -d/--dataset: Path to the dataset CSV file.
+        -c/--config: Path to the configuration JSON file.
+        -s/--save: Save the split dataset (optional).
+    """
     parser = argparse.ArgumentParser(description="Train a neural network on a dataset with a configuration file.")
 
     # Define command-line arguments

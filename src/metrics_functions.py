@@ -1,11 +1,31 @@
+"""
+This file provides various metric functions for use in neural networks evaluations.
+
+The script includes custom implementations for several metric functions.
+
+Dependencies:
+    - numpy
+"""
+
 import numpy as np
 
 class MetricFunctions:
+    """
+    A class to represent and dynamically call various metric functions.
+
+    @ivar names: List of names of metric functions.
+    @type names: list
+    @ivar functions: Dictionary of chosen metric functions.
+    @type functions: dictionary
+    @ivar metric_functions: Dictionary of available metric functions.
+    @type metric_functions: dictionary
+    """
     def __init__(self, names: list):
         """
         Initialize the metric function dynamically based on the given name.
 
         @param names: List of names of the metrics.
+        @type names: list
         """
         self.metric_functions = {
             'accuracy': self.accuracy,
@@ -95,6 +115,7 @@ class MetricFunctions:
         @type y_true: np.ndarray
         @param y_pred: Predicted probabilities.
         @type y_pred: np.ndarray
+
         @return: ROC-AUC score.
         @rtype: float
         """
@@ -118,6 +139,7 @@ class MetricFunctions:
         @type y_true: np.ndarray
         @param y_pred: Predicted probabilities.
         @type y_pred: np.ndarray
+
         @return: PR-AUC score.
         @rtype: float
         """
@@ -141,6 +163,7 @@ class MetricFunctions:
         @type y: np.ndarray
         @param x: Array of x-coordinates.
         @type x: np.ndarray
+
         @return: Approximated integral.
         @rtype: float
         """
