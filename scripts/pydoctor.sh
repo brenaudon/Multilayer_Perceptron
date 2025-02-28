@@ -6,4 +6,4 @@ pydoctor \
     --project-url=https://github.com/brenaudon/$%7BPROJECT_NAME%7D/ \
     --html-base-url=https://brenaudon.github.io/$%7BPROJECT_NAME%7D/ \
     --docformat=epytext \
-    *.py
+    src/*.py src/data_visualization/*.py
