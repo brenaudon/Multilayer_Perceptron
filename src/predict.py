@@ -5,16 +5,18 @@ The script includes functions for making predictions and calculating binary cros
 
 Dependencies:
     - numpy
-    - sklearn
     - pandas
     - sys
+    - os
     - training.py
     - data_manipulation.py
+    - metrics_functions.py
 """
 
 import numpy as np
 import pandas as pd
 import sys
+import os
 from training import forward_propagation
 from data_manipulation import prepare_data_training
 from metrics_functions import MetricFunctions
@@ -60,22 +62,30 @@ def binary_cross_entropy(y_true, y_pred_probs, epsilon=1e-12):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python predict.py <data_csv_file_path> <model_file_path>")
+        print("Usage: python predict.py <data_csv_file_path> <model_name>")
         sys.exit(1)
 
     csv_file_path = sys.argv[1]
-    model_file_path = sys.argv[2]
+    model_name = sys.argv[2]
 
-    model_name = model_file_path.split('.')[0]
+    if not os.path.exists(csv_file_path):
+        print(f"Error: File not found: {csv_file_path}")
+        sys.exit(1)
+    if not os.path.exists(f'../models/{model_name}'):
+        print(f"Error: Model not found: {model_name}")
+        sys.exit(1)
 
-    config_dict = np.load(f'{model_name}_config.npy', allow_pickle=True).item()
+    # Get the absolute path of the current script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    model_path = os.path.join(script_dir, '../models', model_name)
+
+    config_dict = np.load(f'{model_path}/{model_name}_config.npy', allow_pickle=True).item()
 
     # Load the data from the CSV file
     df = pd.read_csv(csv_file_path, header=None)
 
     # Get the pca parameters from file
-    model_name = config_dict.get('model_name')
-    pca_params = np.load(f'{model_name}_pca_parameters.npz', allow_pickle=True)
+    pca_params = np.load(f'{model_path}/{model_name}_pca_parameters.npz', allow_pickle=True)
 
     # Accessing the parameters
     eigenvectors = pca_params['eigenvectors']
@@ -96,7 +106,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Open the parameters file
-    parameters = np.load(model_file_path, allow_pickle=True).item()
+    parameters = np.load(f'{model_path}/{model_name}.npy', allow_pickle=True).item()
 
     y_pred_probs, y_pred = predict(X, parameters, config_dict)
     y_true = np.argmax(y, axis=0).T.reshape(1, -1)
