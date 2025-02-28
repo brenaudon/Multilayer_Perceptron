@@ -66,7 +66,7 @@ def compute_pca(df, variance_threshold: float = 0.95):
     data = numeric_df.values
 
     # Standardize training data
-    train_standardized = standardize_data(numeric_df)
+    train_standardized = standardize_data(data)
 
     # Compute covariance matrix
     covariance_matrix = np.cov(train_standardized, rowvar=False)
