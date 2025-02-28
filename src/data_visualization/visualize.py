@@ -1,3 +1,7 @@
+"""
+This script visualizes the data in the CSV file. It creates a grid of histograms and a pair plot.
+"""
+
 from pyexpat import features
 
 import pandas as pd

@@ -20,6 +20,9 @@ Dependencies:
     - activation_functions.py
     - optimization_functions.py
     - initialization_functions.py
+
+@cvar SEED: Random seed for reproducibility.
+@type SEED: int
 """
 
 import os
