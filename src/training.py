@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+import os
 from tqdm import tqdm
 from parse_config import parse_config
 from cut_dataset import stratified_split_csv
@@ -104,14 +105,18 @@ def evaluate(X, y, epoch, history, parameters, config):
     return history
 
 def save_model(model_name, parameters, training_history, validate_history):
+    # Get the absolute path of the current script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    model_path = os.path.join(script_dir, '../models', model_name)
+    os.makedirs(model_path, exist_ok=True)
     #save the parameters
-    np.save(f'{model_name}.npy', parameters)
-    print(f"Model parameters saved in {model_name}.npy")
+    np.save(f'{model_path}/{model_name}.npy', parameters)
+    print(f"Model parameters saved in models/{model_name}/{model_name}.npy")
 
     # Save training and validation history for comparison
-    np.save(f'{model_name}_training_history.npy', training_history)
-    np.save(f'{model_name}_validate_history.npy', validate_history)
-    print(f"Training and validation history saved in {model_name}_training_history.npy and {model_name}_validate_history.npy")
+    np.save(f'{model_path}/{model_name}_training_history.npy', training_history)
+    np.save(f'{model_path}/{model_name}_validate_history.npy', validate_history)
+    print(f"Training and validation history saved in models/{model_name}/{model_name}_training_history.npy and models/{model_name}/{model_name}_validate_history.npy")
 
 def plot_learning_curve(training_history, validate_history, config):
     metrics = config.get('metrics', [])  # Get metrics list, default to empty if None
@@ -223,6 +228,7 @@ if __name__ == "__main__":
     # Define command-line arguments
     parser.add_argument("--dataset", type=str, required=True, help="Path to the dataset CSV file.")
     parser.add_argument("--config", type=str, required=True, help="Path to the configuration JSON file.")
+    parser.add_argument("--save", type=bool, required=False, default=False, help="Save training and validate dataset (cut 90/10 of provided dataset).")
 
     # Parse arguments
     args = parser.parse_args()
@@ -230,9 +236,10 @@ if __name__ == "__main__":
     # Extract paths
     csv_file_path = args.dataset
     config_file_path = args.config
+    save = args.save
 
     # Load the data from the CSV file and split it into training and validation sets
-    df_train, df_validate = stratified_split_csv(csv_file_path, 90, True)
+    df_train, df_validate = stratified_split_csv(csv_file_path, 90, save)
 
     # Prepare the data for training (PCA)
     df_train, eigenvectors, mean, std = prepare_data_training(df_train)
@@ -252,14 +259,19 @@ if __name__ == "__main__":
     # Load the configuration file
     config_dict = parse_config(config_file_path)
 
-    # Save config for use in predict script
-    np.save(f'{config_dict.get("model_name", "model")}_config.npy', config_dict)
-    print(f"Configuration for this model saved in {config_dict.get('model_name', 'model')}_config.npy")
+    # Get the absolute path of the current script
+    script_dir = os.path.dirname(os.path.realpath(__file__))
 
+    # Save config for use in predict script
     model_name = config_dict.get('model_name', 'model')
+    model_path = os.path.join(script_dir, '../models', model_name)
+    os.makedirs(model_path, exist_ok=True)
+    np.save(f'{model_path}/{config_dict.get("model_name", "model")}_config.npy', config_dict)
+    print(f"Configuration for this model saved in models/{config_dict.get('model_name', 'model')}/{config_dict.get('model_name', 'model')}_config.npy")
+
     # Save PCA parameters in a file for use in predict script
-    np.savez(f'{model_name}_pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
-    print(f"PCA parameters for data preparation for this model saved in {model_name}_pca_parameters.npz")
+    np.savez(f'{model_path}/{model_name}_pca_parameters.npz', eigenvectors=eigenvectors, mean=mean, std=std)
+    print(f"PCA parameters for data preparation for this model saved in models/{config_dict.get('model_name', 'model')}/{model_name}_pca_parameters.npz")
 
     deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 

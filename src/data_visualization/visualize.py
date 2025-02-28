@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 # Load the data from the CSV file
-df = pd.read_csv('../data.csv', header=None)
+df = pd.read_csv('../../data.csv', header=None)
 
 # Count the number of columns
 num_features = df.shape[1]
