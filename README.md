@@ -216,14 +216,14 @@ f'(Z) = 0.5 \left(1 + \tanh \left( \sqrt{\frac{2}{\pi}} \left( Z + 0.044715 Z^3 
 
 ### 🔥 **Summary Table**
 
-| Activation Function | Best For | Pros | Cons |
-|--------------------|---------|------|------|
-| **ReLU** | Most deep learning tasks | Fast, simple, avoids vanishing gradients | Can have dead neurons (dying ReLU problem) |
-| **Leaky ReLU** | Tasks where ReLU fails | Prevents dying neurons | Slightly more expensive |
-| **ELU** | Faster training, better convergence | No dead neurons, good for deep networks | Requires tuning α, slower than ReLU |
-| **SELU** | Deep, fully connected networks | Self-normalizing, reduces need for BatchNorm, good for deep networks | Requires careful weight initialization and Alpha Dropout |
-| **Swish** | Deep networks (Google-developed) | Can outperform ReLU | More complex to compute |
-| **GELU** | Transformer models (BERT, GPT) | Used in state-of-the-art networks | Computationally expensive |
+| Activation Function | Best For                            | Pros                                                                 | Cons                                                     |
+|---------------------|-------------------------------------|----------------------------------------------------------------------|----------------------------------------------------------|
+| **ReLU**            | Most deep learning tasks            | Fast, simple, avoids vanishing gradients                             | Can have dead neurons (dying ReLU problem)               |
+| **Leaky ReLU**      | Tasks where ReLU fails              | Prevents dying neurons                                               | Slightly more expensive                                  |
+| **ELU**             | Faster training, better convergence | No dead neurons, good for deep networks                              | Requires tuning α, slower than ReLU                      |
+| **SELU**            | Deep, fully connected networks      | Self-normalizing, reduces need for BatchNorm, good for deep networks | Requires careful weight initialization and Alpha Dropout |
+| **Swish**           | Deep networks (Google-developed)    | Can outperform ReLU                                                  | More complex to compute                                  |
+| **GELU**            | Transformer models (BERT, GPT)      | Used in state-of-the-art networks                                    | Computationally expensive                                |
 
 ---
 
