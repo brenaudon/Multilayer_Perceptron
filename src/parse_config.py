@@ -51,7 +51,7 @@ def warning_schedule_params(config):
     schedule_function = config.get('schedule')
     schedule_params = config.get('schedule_params')
     if schedule_function:
-        if schedule_params.get('initial_learning_rate') is None and config.get('learning_rate') is None:
+        if schedule_params is None or (schedule_params.get('initial_learning_rate') is None and config.get('learning_rate') is None):
             print("Warning: 'initial_learning_rate' not found in configuration file for learning rate schedule. Using default value of 0.01.")
         match schedule_function:
             case 'step':
