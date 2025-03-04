@@ -171,7 +171,7 @@ def back_propagation(y, parameters, activations, config):
 
     return gradients
 
-def update(gradients, parameters, epoch, config):
+def update(gradients, parameters, epoch, optimization_function: OptimizationFunction):
     """
     Update the parameters of the neural network using the gradients.
 
@@ -181,14 +181,13 @@ def update(gradients, parameters, epoch, config):
     @type  parameters: dict
     @param epoch: The current epoch.
     @type  epoch: int
-    @param config: The configuration dictionary.
-    @type  config: dict
+    @param optimization_function: The optimization function to use.
+    @type  optimization_function: OptimizationFunction
 
     @return: The updated parameters.
     @rtype:  dict
     """
-    optimization_function = OptimizationFunction(config.get('optimization', 'gradient_descent'), config)
-    return optimization_function.function(gradients, parameters, epoch)
+    return optimization_function.update(parameters, gradients, epoch)
 
 def predict(X, parameters, config):
     """
@@ -339,6 +338,9 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     validate_history = {metric: np.zeros((epochs, 1)) for metric in metrics}
     validate_history['loss'] = np.zeros((epochs, 1))
 
+    # Initialize optimization function
+    optimization_function = OptimizationFunction(config.get('optimization', 'gradient_descent'), config)
+
     c_len = len(parameters) // 2
     num_batches = X_train.shape[1] // batch_size
 
@@ -358,7 +360,7 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
             activations = forward_propagation(X_batch, parameters, config)
             gradients = back_propagation(y_batch, parameters, activations, config)
-            parameters = update(gradients, parameters, epoch, config)
+            parameters = update(gradients, parameters, epoch, optimization_function)
 
         # Compute training loss and metrics at the end of each epoch
         training_history = evaluate(X_train, y_train, epoch, training_history, parameters, config)

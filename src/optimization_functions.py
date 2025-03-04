@@ -15,10 +15,8 @@ class OptimizationFunction:
     """
     A class to represent and dynamically call various optimization functions.
 
-    @ivar optimizer_name: The name of the optimization function.
-    @type optimizer_name: str
-    @ivar optimization_functions: Dictionary of available optimization functions.
-    @type optimization_functions: dictionary
+    @ivar optimizer: The optimization function (Instance of a class inheriting from Optimizer class).
+    @type optimizer: Optimizer
     """
     def __init__(self, optimizer_name, config):
         """
@@ -29,7 +27,7 @@ class OptimizationFunction:
         @param config: The configuration dictionary for the neural network.
         @type  config: dict
         """
-        self.optimization_functions = {
+        optimization_functions = {
             'gradient_descent': GradientDescent,
             'adagrad': AdaGrad,
             'momentum': Momentum,
@@ -38,15 +36,29 @@ class OptimizationFunction:
             'adamw': AdamW,
         }
 
-        self.optimizer_name = optimizer_name
-        self.optimizer_class = self.optimization_functions.get(optimizer_name, self.unknown_optimizer)
-        # self.optimizer = self.optimizer_class(config)
+        optimizer_class = optimization_functions.get(optimizer_name)
 
-    def unknown_optimizer(self):
+        if optimizer_class is None:
+            raise ValueError(f"Unknown optimizer: '{optimizer_name}'. Available options: {list(optimization_functions.keys())}")
+
+        self.optimizer = optimizer_class(config)
+
+    def update(self, parameters, gradients, epoch):
         """
-        Raise an error for an unknown optimization function.
+        Update the parameters using the selected optimization function.
+
+        @param parameters: Dictionary containing weights and biases.
+        @type  parameters: dict
+        @param gradients: Dictionary containing gradients.
+        @type  gradients: dict
+        @param epoch: Current epoch.
+        @type  epoch: int
+
+        @return: Updated parameters.
+        @rtype: dict
         """
-        raise ValueError(f"Unknown optimization function: {self.optimizer_name}")
+        return self.optimizer.update(parameters, gradients, epoch)
+
 
 class Optimizer:
     """
