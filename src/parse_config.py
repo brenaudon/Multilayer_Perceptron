@@ -86,16 +86,19 @@ def warning_optimizer_params(config):
         match optimizer_name:
             case 'gradient_descent':
                 pass
+            case 'adagrad':
+                pass
+            case 'momentum':
+                if optimizer_params is None or optimizer_params.get('beta') is None:
+                    print("Warning: 'beta' not found in configuration file for Momentum optimizer. Using default value of 0.9.")
+            case 'rmsprop':
+                if optimizer_params is None or optimizer_params.get('beta') is None:
+                    print("Warning: 'beta' not found in configuration file for RMSprop optimizer. Using default value of 0.9.")
             case 'adam':
                 if optimizer_params is None or optimizer_params.get('beta1') is None:
                     print("Warning: 'beta1' not found in configuration file for Adam optimizer. Using default value of 0.9.")
                 if optimizer_params is None or optimizer_params.get('beta2') is None:
                     print("Warning: 'beta2' not found in configuration file for Adam optimizer. Using default value of 0.999.")
-            case 'nadam':
-                if optimizer_params is None or optimizer_params.get('beta1') is None:
-                    print("Warning: 'beta1' not found in configuration file for Nadam optimizer. Using default value of 0.9.")
-                if optimizer_params is None or optimizer_params.get('beta2') is None:
-                    print("Warning: 'beta2' not found in configuration file for Nadam optimizer. Using default value of 0.999.")
             case 'adamw':
                 if optimizer_params is None or optimizer_params.get('beta1') is None:
                     print("Warning: 'beta1' not found in configuration file for AdamW optimizer. Using default value of 0.9.")
