@@ -27,6 +27,19 @@ def softmax(Z):
     div = np.sum(e_x, axis=0, keepdims=True)
     return e_x / div
 
+def softmax_derivative(Z):
+    """
+    Compute the derivative of the softmax function.
+
+    @param Z: The pre-activation value Z.
+    @type  Z: np.ndarray
+
+    @return: The derivative of the softmax function.
+    @rtype:  np.ndarray
+    """
+    s = softmax(Z)
+    return s * (1 - s)
+
 class ActivationFunction:
     """
     A class to represent and dynamically call various activation functions and their derivatives.

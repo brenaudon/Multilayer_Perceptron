@@ -112,7 +112,7 @@ class InitializationFunction:
         @return: The Xavier Glorot Normal initialized weight matrix.
         @rtype: numpy.ndarray
         """
-        return np.random.randn(dimensions[0]) * np.sqrt(2. / (dimensions[0] + dimensions[1]))
+        return np.random.randn(*dimensions) * np.sqrt(2. / (dimensions[0] + dimensions[1]))
 
     def xavier_glorot_uniform(self, dimensions):
         """

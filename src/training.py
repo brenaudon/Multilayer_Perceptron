@@ -36,7 +36,7 @@ from metrics_functions import MetricFunctions
 from data_manipulation import prepare_data_training
 from optimization_functions import OptimizationFunction
 from initialization_functions import InitializationFunction
-from activation_functions import ActivationFunction, softmax
+from activation_functions import ActivationFunction, softmax, softmax_derivative
 
 
 SEED = 420
@@ -92,7 +92,7 @@ def initialization(dimensions, config):
     for c in range(1, c_len):
         layer = config.get('layer' + str(c))
         if layer is not None:
-            init_funct = InitializationFunction(layer.get('initialization_function', 'random_normal'))
+            init_funct = InitializationFunction(layer.get('initialization', 'random_normal'))
         else :
             init_funct = InitializationFunction('random_normal')
         parameters['W' + str(c)] = init_funct.function((dimensions[c], dimensions[c - 1]))
@@ -164,10 +164,14 @@ def back_propagation(y, parameters, activations, config):
         gradients['db' + str(c)] = 1/m * np.sum(dZ, axis=1, keepdims=True)
 
         if c > 1:
-            layer = config.get('layer' + str(c))
-            af = ActivationFunction(layer.get('activation', 'sigmoid')) if layer else ActivationFunction('sigmoid')
-            dA_prev = np.dot(parameters['W' + str(c)].T, dZ)
-            dZ = dA_prev * af.derivative(activations['Z' + str(c - 1)])
+            if c == c_len:
+                dA_prev = np.dot(parameters['W' + str(c)].T, dZ)
+                dZ = dA_prev * softmax_derivative(activations['Z' + str(c - 1)])
+            else:
+                layer = config.get('layer' + str(c))
+                af = ActivationFunction(layer.get('activation', 'sigmoid')) if layer else ActivationFunction('sigmoid')
+                dA_prev = np.dot(parameters['W' + str(c)].T, dZ)
+                dZ = dA_prev * af.derivative(activations['Z' + str(c - 1)])
 
     return gradients
 
