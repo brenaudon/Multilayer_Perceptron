@@ -1,0 +1,24 @@
+{
+    "layer1": {
+        "nb_neurons": 36,
+        "activation": "sigmoid",
+        "initialization": "he_normal"
+    },
+    "layer2": {
+        "nb_neurons": 36,
+        "activation": "sigmoid",
+        "initialization": "he_normal"
+    },
+    "layer3": {
+        "nb_neurons": 36,
+        "activation": "sigmoid",
+        "initialization": "he_normal"
+    },
+    "learning_rate": 0.002,
+    "optimization": "gradient_descent",
+    "batch_size": 8,
+    "epochs": 1500,
+    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "model_name": "model",
+    "display": "tqdm"
+}
