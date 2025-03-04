@@ -41,7 +41,7 @@ class ScheduleFunction:
         }
 
         self.name = name
-        self.lr = config.get('schedule_params').get('initial_learning_rate') if config.get('schedule_params') else config.get('learning_rate', 0.01)
+        self.lr = config.get('schedule_params').get('initial_learning_rate', 0.01) if config.get('schedule_params') else 0.01
         self.config = config
         self.function = self.schedule_functions.get(name, self.unknown_schedule)
 

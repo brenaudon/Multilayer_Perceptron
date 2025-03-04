@@ -84,7 +84,7 @@ class Optimizer:
         if self.schedule_function is None:
             self.learning_rate = config.get('learning_rate', 0.002)
         else:
-            self.learning_rate = config.get('schedule_params').get('initial_learning_rate', 0.01) if config.get('schedule_params') else config.get('learning_rate', 0.01)
+            self.learning_rate = config.get('schedule_params').get('initial_learning_rate', 0.01) if config.get('schedule_params') else 0.01
         self.l1_lambda = config.get('l1_lambda', 0.0) # No L1 regularization by default
         self.l2_lambda = config.get('l2_lambda', 0.0) # No L2 regularization by default
 
@@ -169,14 +169,14 @@ class AdaGrad(Optimizer):
                 self.G[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating
-            gradients[key] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[key] += self.l2_lambda * parameters[key]  # L2 penalty
+            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Accumulate squared gradients
             self.G[key] += parameters[key] ** 2
 
             # Update parameters
-            parameters[key] -= (decayed_learning_rate / (np.sqrt(self.G[key]) + epsilon)) * gradients[key]
+            parameters[key] -= (decayed_learning_rate / (np.sqrt(self.G[key]) + epsilon)) * gradients[f'd{key}']
 
         return parameters
 
@@ -223,11 +223,11 @@ class Momentum(Optimizer):
                 self.velocity[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating velocity
-            gradients[key] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[key] += self.l2_lambda * parameters[key]  # L2 penalty
+            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Update velocity
-            self.velocity[key] = self.beta * self.velocity[key] + (1 - self.beta) * gradients[key]
+            self.velocity[key] = self.beta * self.velocity[key] + (1 - self.beta) * gradients[f'd{key}']
 
             # Update parameters
             parameters[key] -= decayed_learning_rate * self.velocity[key]
@@ -279,14 +279,14 @@ class RMSprop(Optimizer):
                 self.v[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating velocity
-            gradients[key] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[key] += self.l2_lambda * parameters[key]  # L2 penalty
+            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Update moving average of squared gradients
-            self.v[key] = self.beta * self.v[key] + (1 - self.beta) * (gradients[key] ** 2)
+            self.v[key] = self.beta * self.v[key] + (1 - self.beta) * (gradients[f'd{key}'] ** 2)
 
             # Apply RMSprop update
-            parameters[key] -= (decayed_learning_rate / (np.sqrt(self.v[key]) + epsilon)) * gradients[key]
+            parameters[key] -= (decayed_learning_rate / (np.sqrt(self.v[key]) + epsilon)) * gradients[f'd{key}']
 
         return parameters
 
@@ -345,11 +345,11 @@ class Adam(Optimizer):
                 self.v[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating moments
-            gradients[key] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[key] += self.l2_lambda * parameters[key]  # L2 penalty
+            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
-            self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * gradients[key]
-            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * (gradients[key] ** 2)
+            self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * gradients[f'd{key}']
+            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * (gradients[f'd{key}'] ** 2)
 
             # Bias correction
             m_hat = self.m[key] / (1 - self.beta1 ** self.t)
