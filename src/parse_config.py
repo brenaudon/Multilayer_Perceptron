@@ -25,6 +25,9 @@ def validate_layers(config):
     if len(layer_numbers) < 2:
         raise ValueError("At least two hidden layers are required.")
 
+    if layer_numbers[0] != 1:
+        raise ValueError("First hidden layer must be layer1.")
+
     # Check for missing numbers in sequence (layer1, layer2, ... must be consecutive)
     for i in range(len(layer_numbers) - 1):
         if layer_numbers[i + 1] != layer_numbers[i] + 1:
