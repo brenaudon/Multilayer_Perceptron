@@ -132,6 +132,8 @@ def forward_propagation(X, parameters, config, training=True):
 
             if training:  # Apply dropout only during training
                 A = dropout_layer(A, dropout_rate)
+            else:  # Scale activations at inference time
+                A = A * (1 - dropout_rate)
 
             activations['A' + str(c)] = A
 

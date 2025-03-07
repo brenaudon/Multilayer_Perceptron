@@ -1214,7 +1214,7 @@ Excessive dropout may lead to **underfitting**.
 #### **How It Works**
 - During **each training iteration**, a subset of neurons is randomly deactivated (along with their connections).
 - This prevents the network from relying too heavily on any single neuron, encouraging a **more distributed representation of features**.
-- At **inference time**, no neurons are dropped, but their outputs are scaled down by the dropout rate to compensate for the training phase.
+- At **inference time**, no neurons are dropped, but their outputs are scaled down by the dropout rate to compensate for the training phase. If activations are not scaled, the network will receive a higher signal strength than during training, which can lead to incorrect predictions.
 
 Example: dropout rate of 0.2 means 20% of neurons are dropped.
 
