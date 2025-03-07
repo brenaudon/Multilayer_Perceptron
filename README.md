@@ -42,8 +42,10 @@ This project consists of multiple scripts designed to preprocess data, train a n
 To explore the dataset visually, use the `visualize.py` script.
 
 ```bash
-python visualize.py <csv_file_path>
+python visualize.py -d <csv_file_path>
 ```
+- `-d, --dataset` : Path to the dataset CSV file.
+
 This script generates:
 - **Histograms** for each feature.
 - **Pair plots** to analyze feature relationships.
