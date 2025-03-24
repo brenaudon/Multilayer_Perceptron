@@ -1,0 +1,23 @@
+{
+    "layer1": {
+        "nb_neurons": 24,
+        "activation": "sigmoid",
+        "initialization": "random_normal"
+    },
+    "layer2": {
+        "nb_neurons": 24,
+        "activation": "sigmoid",
+        "initialization": "random_normal"
+    },
+
+
+    "optimization": "gradient_descent",
+    "learning_rate": 0.008,
+    "batch_size": 32,
+    "epochs": 15000,
+
+
+    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "model_name": "long_train",
+    "display": "tqdm"
+}
