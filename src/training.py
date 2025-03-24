@@ -417,7 +417,7 @@ if __name__ == "__main__":
     # Define command-line arguments
     parser.add_argument("-d", "--dataset", type=str, required=True, help="Path to the dataset CSV file.")
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to the configuration JSON file.")
-    parser.add_argument("-s", "--save", type=bool, required=False, default=False, help="Save training and validate dataset (cut 90/10 of provided dataset).")
+    parser.add_argument("-s", "--save", action='store_true', help="Save training and validate dataset (cut 90/10 of provided dataset).")
 
     # Parse arguments
     args = parser.parse_args()
