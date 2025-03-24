@@ -1,0 +1,27 @@
+{
+    "layer1": {
+        "nb_neurons": 32,
+        "activation": "relu",
+        "initialization": "he_normal"
+    },
+    "layer2": {
+        "nb_neurons": 32,
+        "activation": "relu",
+        "initialization": "he_normal"
+    },
+
+    "optimization": "adam",
+    "optimizer_params": {
+        "beta1": 0.9,
+        "beta2": 0.999
+    },
+
+    "learning_rate": 0.001,
+    "batch_size": 8,
+    "epochs": 600,
+
+
+    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "model_name": "relu_adam",
+    "display": "tqdm"
+}
