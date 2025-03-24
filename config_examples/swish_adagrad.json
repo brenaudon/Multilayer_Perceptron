@@ -1,0 +1,21 @@
+{
+    "layer1": {
+        "nb_neurons": 24,
+        "activation": "swish",
+        "initialization": "he_uniform"
+    },
+    "layer2": {
+        "nb_neurons": 24,
+        "activation": "swish",
+        "initialization": "he_uniform"
+    },
+
+    "optimization": "adagrad",
+    "learning_rate": 0.01,
+    "batch_size": 8,
+    "epochs": 1000,
+
+    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "model_name": "swish_adagrad",
+    "display": "tqdm"
+}
