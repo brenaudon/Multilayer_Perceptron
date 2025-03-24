@@ -169,11 +169,12 @@ class AdaGrad(Optimizer):
                 self.G[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating
-            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
+            if "W" in key:  # only apply L2 to weights, not biases
+                gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+                gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Accumulate squared gradients
-            self.G[key] += parameters[key] ** 2
+            self.G[key] += gradients[f'd{key}'] ** 2
 
             # Update parameters
             parameters[key] -= (decayed_learning_rate / (np.sqrt(self.G[key]) + epsilon)) * gradients[f'd{key}']
@@ -223,8 +224,9 @@ class Momentum(Optimizer):
                 self.velocity[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating velocity
-            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
+            if "W" in key:  # only apply L2 to weights, not biases
+                gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+                gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Update velocity
             self.velocity[key] = self.beta * self.velocity[key] + (1 - self.beta) * gradients[f'd{key}']
@@ -279,8 +281,9 @@ class RMSprop(Optimizer):
                 self.v[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating velocity
-            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
+            if "W" in key:  # only apply L1 and L2 to weights, not biases
+                gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+                gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             # Update moving average of squared gradients
             self.v[key] = self.beta * self.v[key] + (1 - self.beta) * (gradients[f'd{key}'] ** 2)
@@ -345,8 +348,9 @@ class Adam(Optimizer):
                 self.v[key] = np.zeros_like(parameters[key])
 
             # Apply L1/L2 regularization to gradients before updating moments
-            gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
-            gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
+            if "W" in key:  # only apply L2 to weights, not biases
+                gradients[f'd{key}'] += self.l1_lambda * np.sign(parameters[key])  # L1 penalty
+                gradients[f'd{key}'] += self.l2_lambda * parameters[key]  # L2 penalty
 
             self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * gradients[f'd{key}']
             self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * (gradients[f'd{key}'] ** 2)
