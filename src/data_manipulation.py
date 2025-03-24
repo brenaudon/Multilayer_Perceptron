@@ -17,26 +17,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
-def normalize_numeric_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normalize every numeric feature in the DataFrame.
-
-    @param df: The DataFrame containing the data.
-    @type  df: pd.DataFrame
-
-    @return: The DataFrame with normalized numeric features.
-    @rtype:  pd.DataFrame
-    """
-    numeric_df = df.select_dtypes(include=['float64', 'int64']).drop(columns=['ID'])
-    scaler = MinMaxScaler()
-    normalized_array = scaler.fit_transform(numeric_df)
-    normalized_df = pd.DataFrame(normalized_array, columns=numeric_df.columns, index=df.index)
-
-    # Replace the original numeric columns with the normalized ones
-    df[numeric_df.columns] = normalized_df
-
-    return df
-
 def standardize_data(data: np.ndarray) -> np.ndarray:
     """
     Standardize data to zero mean and unit variance.
@@ -136,9 +116,6 @@ def prepare_data_training(df: pd.DataFrame, eigenvectors = None, mean = None, st
     # Extract 'ID' and 'Diagnosis' before transformation
     id_col = df[['ID']]
     diagnosis_col = df[['Diagnosis']]
-
-    # Normalize numeric features
-    df = normalize_numeric_features(df)
 
     # Compute PCA on training set only
     if eigenvectors is None or mean is None or std is None:
