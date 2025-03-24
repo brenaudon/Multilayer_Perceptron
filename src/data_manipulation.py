@@ -15,7 +15,6 @@ Dependencies:
 
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 
 def standardize_data(data: np.ndarray) -> np.ndarray:
     """
