@@ -339,10 +339,10 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
 
     # dictionary to store model metrics history
     metrics = config.get('metrics', [])
-    training_history = {metric: np.zeros((epochs, 1)) for metric in metrics}
-    training_history['loss'] = np.zeros((epochs, 1))
-    validate_history = {metric: np.zeros((epochs, 1)) for metric in metrics}
-    validate_history['loss'] = np.zeros((epochs, 1))
+    training_history = {metric: np.zeros(epochs) for metric in metrics}
+    training_history['loss'] = np.zeros(epochs)
+    validate_history = {metric: np.zeros(epochs) for metric in metrics}
+    validate_history['loss'] = np.zeros(epochs)
 
     # Initialize optimization function
     optimization_function = OptimizationFunction(config.get('optimization', 'gradient_descent'), config)
@@ -374,8 +374,10 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
         # Compute validation loss and metrics at the end of each epoch
         validate_history = evaluate(X_validate, y_validate, epoch, validate_history, parameters, config)
 
-        if config.get('display') is not None and config.get('display') != 'tqdm':
-            print(f'epoch {epoch+1}/{epochs} - training loss: {training_history[epoch, 0]:.4f} - validation loss: {validate_history[epoch, 0]:.4f}')
+        if config.get('display') is None or config.get('display') != 'tqdm':
+            training_loss = training_history.get('loss')[epoch]
+            validate_loss = validate_history['loss'][epoch]
+            print(f'epoch {epoch+1}/{epochs} - training loss: {training_loss:.4f} - validation loss: {validate_loss:.4f}')
 
         # Early Stopping Check
         if early_stopping:
