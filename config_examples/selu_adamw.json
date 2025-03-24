@@ -1,0 +1,39 @@
+{
+    "layer1": {
+        "nb_neurons": 32,
+        "activation": "selu",
+        "initialization": "lecun_normal"
+    },
+    "layer2": {
+        "nb_neurons": 32,
+        "activation": "selu",
+        "initialization": "lecun_normal"
+    },
+    "layer3": {
+        "nb_neurons": 32,
+        "activation": "selu",
+        "initialization": "lecun_uniform"
+    },
+
+    "optimization": "adamw",
+    "optimizer_params": {
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "weight_decay": 0.01
+    },
+
+    "batch_size": 16,
+    "epochs": 1200,
+    "learning_rate": 0.001,
+
+    "schedule": "time_based",
+    "schedule_params": {
+        "initial_learning_rate": 0.001,
+        "decay_rate": 0.02
+    },
+
+
+    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "model_name": "selu_adamw",
+    "display": "tqdm"
+}
