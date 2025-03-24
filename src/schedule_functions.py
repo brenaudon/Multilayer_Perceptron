@@ -62,7 +62,7 @@ class ScheduleFunction:
         @rtype: float
         """
         drop_factor = self.config.get('schedule_params').get('drop_factor', 0.1) if self.config.get('schedule_params') else 0.1
-        epochs_drop = self.config.get('schedule_params').get('epochs_drop', 50) if self.config.get('schedule_params') else 10
+        epochs_drop = self.config.get('schedule_params').get('epochs_drop', 10) if self.config.get('schedule_params') else 10
         return self.lr * (drop_factor ** (epoch // epochs_drop))
 
     def exponential_decay(self, epoch):
