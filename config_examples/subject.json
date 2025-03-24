@@ -19,6 +19,5 @@
     "batch_size": 8,
     "epochs": 840,
     "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
-    "model_name": "subject",
-    "display": "tqdm"
+    "model_name": "subject"
 }
