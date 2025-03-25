@@ -58,7 +58,7 @@ def stratified_split_csv(file_path, percentage, save=False):
 
     return df_train, df_valid
 
-if __name__ == "__main__":
+def main():
     """
     Main function to split a dataset into training and validation sets while maintaining class balance.
     
@@ -85,3 +85,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     stratified_split_csv(csv_file_path, percentage, True)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        sys.exit(1)

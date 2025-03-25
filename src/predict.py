@@ -62,7 +62,7 @@ def binary_cross_entropy(y_true, y_pred_probs, epsilon=1e-12):
     loss = -1/m * np.sum(y_true * np.log(y_pred_probs) + (1 - y_true) * np.log(1 - y_pred_probs))
     return loss
 
-if __name__ == "__main__":
+def main():
     """
     Main function to perform predictions using a trained model and input CSV file.
     
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         df, _, _, _ = prepare_data_training(df, eigenvectors, mean, std)
 
     # Split the data into features and target
-    X = df.drop(columns=['ID', 'Diagnosis']).T
+    X = df.drop(columns=['ID', 'Diagnosis'])
     X = X.values.T
     y = np.array(df['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
 
@@ -149,3 +149,10 @@ if __name__ == "__main__":
         print(f'{key}: {metrics.functions[key](y_true.flatten(), y_pred.flatten())}')
 
     print(f"Binary Cross-Entropy Loss: {binary_cross_entropy(y_true, y_pred_probs)}")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        sys.exit(1)

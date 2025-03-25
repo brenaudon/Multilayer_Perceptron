@@ -9,6 +9,7 @@ It includes:
 
 Dependencies:
     - os
+    - sys
     - tqdm
     - numpy
     - pandas
@@ -27,6 +28,7 @@ Dependencies:
 """
 
 import os
+import sys
 import argparse
 import numpy as np
 import pandas as pd
@@ -405,7 +407,7 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     # Plot learning curve
     plot_learning_curve(training_history, validate_history, config)
 
-if __name__ == "__main__":
+def main():
     """
     Main function to train a deep neural network on a dataset.
     
@@ -499,3 +501,10 @@ if __name__ == "__main__":
     deep_neural_network(X_train, y_train, X_validate, y_validate, config_dict)
 
     print("Training done!")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        sys.exit(1)
