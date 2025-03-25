@@ -408,14 +408,6 @@ def deep_neural_network(X_train, y_train, X_validate, y_validate, config):
     plot_learning_curve(training_history, validate_history, config)
 
 def main():
-    """
-    Main function to train a deep neural network on a dataset.
-    
-    The script takes the following arguments:
-        -d/--dataset: Path to the dataset CSV file.
-        -c/--config: Path to the configuration JSON file.
-        -s/--save: Save the split dataset (optional).
-    """
     parser = argparse.ArgumentParser(description="Train a neural network on a dataset with a configuration file.")
 
     # Define command-line arguments
@@ -503,6 +495,14 @@ def main():
     print("Training done!")
 
 if __name__ == "__main__":
+    """
+    Main function to train a deep neural network on a dataset.
+    
+    The script takes the following arguments:
+        -d/--dataset: Path to the dataset CSV file.
+        -c/--config: Path to the configuration JSON file.
+        -s/--save: Save the split dataset (optional).
+    """
     try:
         main()
     except Exception as e:

@@ -59,14 +59,6 @@ def stratified_split_csv(file_path, percentage, save=False):
     return df_train, df_valid
 
 def main():
-    """
-    Main function to split a dataset into training and validation sets while maintaining class balance.
-    
-    The script takes two arguments:
-        csv_file_path: The path to the CSV file to cut.
-        percentage: The percentage of data to use for training (0-100).
-    """
-
     # Create an argument parser
     parser = argparse.ArgumentParser(description="Split a CSV dataset into training and validation sets.")
 
@@ -87,6 +79,13 @@ def main():
     stratified_split_csv(csv_file_path, percentage, True)
 
 if __name__ == "__main__":
+    """
+    Main function to split a dataset into training and validation sets while maintaining class balance.
+    
+    The script takes two arguments:
+        csv_file_path: The path to the CSV file to cut.
+        percentage: The percentage of data to use for training (0-100).
+    """
     try:
         main()
     except Exception as e:
