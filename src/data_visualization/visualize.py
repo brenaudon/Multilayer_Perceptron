@@ -1,9 +1,29 @@
+"""
+This script helps visualize the dataset.
+
+Dependencies:
+    - sys
+    - argparse
+    - pandas
+    - seaborn
+    - matplotlib
+"""
+
+import sys
 import argparse
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 def visualize_data(dataset_path):
+    """
+    Visualize the dataset with histograms and pair plots.
+
+    @param dataset_path: The path to the dataset (CSV file) to be visualized.
+    @type  dataset_path: str
+
+    @return: None
+    """
     # Load the data from the CSV file
     df = pd.read_csv(dataset_path, header=None)
 
@@ -55,4 +75,8 @@ def main():
     visualize_data(args.dataset)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        sys.exit(1)
