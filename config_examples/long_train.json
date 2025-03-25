@@ -1,11 +1,16 @@
 {
     "layer1": {
-        "nb_neurons": 24,
+        "nb_neurons": 64,
         "activation": "sigmoid",
         "initialization": "random_normal"
     },
     "layer2": {
-        "nb_neurons": 24,
+        "nb_neurons": 64,
+        "activation": "sigmoid",
+        "initialization": "random_normal"
+    },
+    "layer3": {
+        "nb_neurons": 64,
         "activation": "sigmoid",
         "initialization": "random_normal"
     },
