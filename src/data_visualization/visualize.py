@@ -68,6 +68,12 @@ def visualize_data(dataset_path):
     plt.show()
 
 def main():
+    """
+    Main function to visualize data from a CSV file.
+
+    The script takes two arguments:
+        - -d/--data: The path to the CSV data file.
+    """
     parser = argparse.ArgumentParser(description="Visualize a dataset with histograms and pair plots.")
     parser.add_argument("-d", "--dataset", required=True, help="Path to the dataset (CSV file) to be visualized.")
     args = parser.parse_args()
