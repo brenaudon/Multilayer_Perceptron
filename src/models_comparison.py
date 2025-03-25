@@ -19,7 +19,7 @@ import os
 import argparse
 import matplotlib.pyplot as plt
 
-if __name__ == "__main__":
+def main():
     """
     Main function to visualize and compare the training history of multiple models.
     
@@ -109,3 +109,10 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"An exception occurred: {e}")
+        sys.exit(1)
