@@ -17,7 +17,7 @@
     "epochs": 5000,
 
 
-    "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+    "metrics": ["accuracy", "precision", "f1", "roc_auc", "pr_auc"],
     "model_name": "overfit_demo",
     "display": "tqdm"
 }
