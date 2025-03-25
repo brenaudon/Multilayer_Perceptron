@@ -110,7 +110,21 @@ if __name__ == "__main__":
 
     pca_params.close()
 
-    df, _, _, _ = prepare_data_training(df, eigenvectors, mean, std)
+    if eigenvectors is None or mean is None or std is None:
+        print("Error: PCA parameters not found.")
+        sys.exit(1)
+
+    # if no PCA, just normalization
+    if eigenvectors.size == 0:
+        # Identify feature columns
+        cols_to_normalize = [c for c in df.columns if c not in ['ID', 'Diagnosis']]
+        # Normalize features
+        df_features = df[cols_to_normalize]
+        df_features = (df_features - mean) / std
+        # Reconstruct the DataFrame
+        df = pd.concat([df[['ID', 'Diagnosis']], df_features], axis=1)
+    else:
+        df, _, _, _ = prepare_data_training(df, eigenvectors, mean, std)
 
     # Split the data into features and target
     X = df.drop(columns=['ID', 'Diagnosis']).T

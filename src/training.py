@@ -11,6 +11,7 @@ Dependencies:
     - os
     - tqdm
     - numpy
+    - pandas
     - argparse
     - matplotlib.pyplot
     - cut_dataset.py
@@ -28,6 +29,7 @@ Dependencies:
 import os
 import argparse
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from parse_config import parse_config
@@ -418,6 +420,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, required=True, help="Path to the dataset CSV file.")
     parser.add_argument("-c", "--config", type=str, required=True, help="Path to the configuration JSON file.")
     parser.add_argument("-s", "--save", action='store_true', help="Save training and validate dataset (cut 90/10 of provided dataset).")
+    parser.add_argument("-p", "--pure", action='store_true', help="Used unprepared (pure) dataset, just normalized. No PCA applied. Used to overfit faster to demonstrate project bonuses.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -426,13 +429,44 @@ if __name__ == "__main__":
     csv_file_path = args.dataset
     config_file_path = args.config
     save = args.save
+    pure = args.pure
+
 
     # Load the data from the CSV file and split it into training and validation sets
     df_train, df_validate = stratified_split_csv(csv_file_path, 90, save)
 
-    # Prepare the data for training (PCA)
-    df_train, eigenvectors, mean, std = prepare_data_training(df_train)
-    df_validate, _, _, _ = prepare_data_training(df_validate, eigenvectors, mean, std)
+    if pure:
+        df_train.columns = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(df_train.shape[1] - 2)]
+        df_validate.columns = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(df_validate.shape[1] - 2)]
+
+        # Normalize the data
+        df_train_features = df_train.drop(columns=['ID', 'Diagnosis'])
+        df_validate_features = df_validate.drop(columns=['ID', 'Diagnosis'])
+
+        # Compute mean/std on training features
+        train_mean = df_train_features.mean()
+        train_std = df_train_features.std()
+
+        # Avoid dividing by zero if any standard deviation is zero
+        train_std.replace(0, 1, inplace=True)
+
+        # Normalize training and validation data
+        train_features_norm = (df_train_features - train_mean) / train_std
+        validate_features_norm = (df_validate_features - train_mean) / train_std
+
+        # Reassemble ID, Diagnosis, and normalized features
+        df_train = pd.concat([df_train[['ID', 'Diagnosis']], train_features_norm], axis=1)
+        df_validate = pd.concat([df_validate[['ID', 'Diagnosis']], validate_features_norm], axis=1)
+
+        # In pure mode (no PCA), set empty arrays for eigenvectors
+        eigenvectors = np.array([])
+        mean = train_mean.values
+        std = train_std.values
+
+    else:
+        # Prepare the data for training (PCA)
+        df_train, eigenvectors, mean, std = prepare_data_training(df_train)
+        df_validate, _, _, _ = prepare_data_training(df_validate, eigenvectors, mean, std)
 
     # Split the data into features and target
     X_train = df_train.drop(columns=['ID', 'Diagnosis']).T
