@@ -1196,6 +1196,7 @@ L1 and L2 regularization are techniques used in deep neural networks (DNNs) to p
 | Effect on weights        | Promotes sparsity (some weights become exactly zero) | Shrinks weights smoothly but keeps them nonzero |
 | Use case                 | Feature selection, high-dimensional data             | General regularization, avoids large weights    |
 | Computational efficiency | Less computationally expensive                       | More computationally expensive                  |
+| Typical value range      | Smaller than L2                                      | 0.001 -> 0.00001                                |
 
 
 #### **L1 + L2: Elastic Net**
