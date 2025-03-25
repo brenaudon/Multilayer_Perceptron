@@ -116,6 +116,7 @@ if __name__ == "__main__":
 
     # if no PCA, just normalization
     if eigenvectors.size == 0:
+        df.columns = ['ID', 'Diagnosis'] + [f'feature_{i}' for i in range(df.shape[1] - 2)]
         # Identify feature columns
         cols_to_normalize = [c for c in df.columns if c not in ['ID', 'Diagnosis']]
         # Normalize features
@@ -128,6 +129,7 @@ if __name__ == "__main__":
 
     # Split the data into features and target
     X = df.drop(columns=['ID', 'Diagnosis']).T
+    X = X.values.T
     y = np.array(df['Diagnosis'].map({'M': [1, 0], 'B': [0, 1]}).tolist()).T
 
     # Check if Nan values are present in y
