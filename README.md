@@ -28,6 +28,12 @@ This project serves as an introduction to **deep learning** concepts and paves t
 
 ---
 
+## **First Steps**
+
+Learned basic knowledge on deep neural networks thanks to [Machine Learnia](https://www.youtube.com/c/MachineLearnia) and his [playlist on this subject](https://www.youtube.com/watch?v=XUFLq6dKQok&list=PLO_fdPEVlfKoanjvTJbIbd9V5d9Pzp8Rw) (in french).
+
+---
+
 ## **Project Documentation**
 
 [Auto-generated documentation from Docstrings](https://brenaudon.github.io/Multilayer_Perceptron/)
@@ -295,9 +301,90 @@ By using this dataset, the neural network is trained to classify whether a tumor
 
 ---
 
+## **Principal Component Analysis (PCA)**
+
+**Principal Component Analysis (PCA)** is an optional step that can greatly simplify and speed up training. It is a **dimensionality reduction** technique that transforms the original features into a smaller set of new features (principal components), while aiming to preserve as much **variance** (information) in the data as possible.
+
+1. **How It Works**  
+   - Computes directions of maximum variance in high-dimensional data.  
+   - Projects the data onto these new directions (principal components).  
+   - Each principal component is an uncorrelated combination of the original variables.
+
+2. **Benefits of PCA**  
+   - **Noise Reduction**: Removing minor components can eliminate noise.  
+   - **Faster Training**: Fewer input features can reduce computational load.  
+   - **Visualization**: With 2 or 3 principal components, high-dimensional data can be plotted for insights.
+
+3. **Drawbacks**  
+   - **Information Loss**: Reducing dimensions can lose some details.  
+   - **Interpretability**: Principal components can be less intuitive compared to original features.
+
+4. **When to Apply**  
+   - Data has **many correlated features**.  
+   - Want to **speed up** model training. 
+
+In practice:
+- Normalize the dataset (e.g., standardization).  
+- Apply PCA to reduce dimensions (choose the number of principal components to keep).  
+- Use the PCA-transformed data for training your neural network.
+
+---
+
 ## **Activation Functions**
 
-### 🔹 **1. ReLU (Rectified Linear Unit)**
+### 🔹 **1. Sigmoid**
+#### **Definition**
+The Sigmoid function (also called the logistic function) squashes inputs to the range **(0, 1)**:
+
+```math
+\sigma(Z) = \frac{1}{1 + e^{-Z}}
+```
+
+#### **Derivative**
+```math
+\sigma'(Z) = \sigma(Z) \cdot (1 - \sigma(Z))
+```
+
+#### **Pros**
+✅ Output is **bounded between 0 and 1**, making it useful for probabilistic interpretation.  
+✅ Historically important and simple to understand.
+
+#### **Cons**
+❌ Prone to the **vanishing gradient problem** when used in deep networks.  
+❌ Outputs saturate quickly; large positive/negative inputs push the output near 1 or 0, leading to extremely small gradients.
+
+#### **Best Use Cases**
+- **Output layers** in binary classification (if not using softmax).  
+- **Lower-depth neural networks** or logistic regression tasks.
+
+
+### 🔹 **2. Tanh (Hyperbolic Tangent)**
+#### **Definition**
+Tanh is similar to Sigmoid but outputs values in the range **(-1, +1)**:
+
+```math
+\tanh(Z) = \frac{e^Z - e^{-Z}}{e^Z + e^{-Z}}
+```
+
+#### **Derivative**
+```math
+\tanh'(Z) = 1 - \tanh^2(Z)
+```
+
+#### **Pros**
+✅ **Zero-centered** output helps training converge faster than Sigmoid.  
+✅ Works better than Sigmoid in many hidden-layer settings due to its symmetric range (-1 to +1).
+
+#### **Cons**
+❌ Still suffers from the **vanishing gradient problem** for large |Z| values.  
+❌ Not as popular for very deep networks compared to ReLU-based functions.
+
+#### **Best Use Cases**
+- **Hidden layers** where zero-centered outputs might be beneficial.  
+- **Shallower networks** or tasks that historically used Tanh or Sigmoid.
+
+
+### 🔹 **3. ReLU (Rectified Linear Unit)**
 #### **Definition**
 ReLU is one of the most widely used activation functions in deep learning. It is defined as:
 
@@ -332,7 +419,7 @@ f'(Z) =
 - Recommended for **hidden layers** in most architectures.
 
 
-### 🔹 **2. Leaky ReLU**
+### 🔹 **4. Leaky ReLU**
 #### **Definition**
 Leaky ReLU solves the **dying ReLU problem** by allowing a small slope for negative values:
 
@@ -362,7 +449,7 @@ f'(Z) =
 - Use **instead of ReLU** when you notice many neurons **dying (stuck at 0)**.
 
 
-### 🔹 **3. ELU (Exponential Linear Unit)**
+### 🔹 **5. ELU (Exponential Linear Unit)**
 #### **Definition**
 ELU is similar to Leaky ReLU but uses an **exponential curve** instead of a fixed slope for negative values:
 
@@ -398,7 +485,7 @@ f(Z) + \alpha, & Z \leq 0
 - Works well for deep networks where ReLU might struggle.
 
 
-### 🔹 **4. SELU (Scaled Exponential Linear Unit)**
+### 🔹 **6. SELU (Scaled Exponential Linear Unit)**
 #### **Definition**
 SELU (Scaled Exponential Linear Unit) is an activation function designed to **self-normalize** neural networks. It was introduced in the paper:  
 👉 *Klambauer et al., 2017 - "Self-Normalizing Neural Networks"*
@@ -450,7 +537,7 @@ SELU'(x) =
 - Tasks like **image classification**, **speech recognition**, or **NLP** (where deep, stable networks are crucial).
 
 
-### 🔹 **5. Swish (Self-Gated)**
+### 🔹 **7. Swish (Self-Gated)**
 #### **Definition**
 Swish is a **smooth, non-monotonic** function developed by Google that often outperforms ReLU:
 
@@ -478,7 +565,7 @@ f'(Z) = \sigma(Z) + Z \cdot \sigma(Z) \cdot (1 - \sigma(Z))
 - If you want to **experiment** beyond ReLU.
 
 
-### 🔹 **6. GELU (Gaussian Error Linear Unit)**
+### 🔹 **8. GELU (Gaussian Error Linear Unit)**
 #### **Definition**
 GELU is used in **BERT, GPT, and transformers**. Instead of using a simple threshold (like ReLU), it smoothly adjusts activations based on a Gaussian curve:
 
